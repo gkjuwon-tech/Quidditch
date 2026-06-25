@@ -155,11 +155,11 @@ impl Controller {
         let mut vsp_xy = [sp[3], sp[4]];
         if sp[0].is_finite() && sp[1].is_finite() {
             let err = [sp[0] - pos[0], sp[1] - pos[1]];
-            let dist = (err[0] * err[0] + err[1] * err[1]).sqrt();
+            let dist = sqrt(err[0] * err[0] + err[1] * err[1]);
             if dist > 1e-6 {
                 let a_brake = 0.7 * p.max_accel_xy;
                 let v_des = (p.kp_pos_xy * dist)
-                    .min((2.0 * a_brake * dist).sqrt())
+                    .min(sqrt(2.0 * a_brake * dist))
                     .min(p.max_speed_xy);
                 vsp_xy[0] += err[0] / dist * v_des;
                 vsp_xy[1] += err[1] / dist * v_des;
@@ -180,8 +180,8 @@ impl Controller {
         // desired thrust vector (gravity compensated) + tilt limit
         let mut tv = [p.mass * acc_xy[0], p.mass * acc_xy[1], p.mass * acc_z + p.hover_thrust];
         let z = tv[2].max(1e-3);
-        let xy_norm = (tv[0] * tv[0] + tv[1] * tv[1]).sqrt();
-        let max_xy = z * p.max_tilt.tan();
+        let xy_norm = sqrt(tv[0] * tv[0] + tv[1] * tv[1]);
+        let max_xy = z * tan(p.max_tilt);
         if xy_norm > max_xy && xy_norm > 1e-9 {
             let k = max_xy / xy_norm;
             tv[0] *= k;

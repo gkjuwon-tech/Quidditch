@@ -3,9 +3,24 @@
 //! Layout note: every FFI scalar is f64 (no mixed-width fields) so the structs
 //! have trivial, predictable layout that a Python ctypes.Structure mirrors
 //! exactly -- no padding surprises across the boundary.
+//!
+//! Builds two ways:
+//!   * default (feature "std"): cdylib with heap-based create/destroy, used by
+//!     the Python ctypes host backend.
+//!   * --no-default-features: #![no_std] for bare-metal flight MCUs. Use the
+//!     placement-init API (nc_size + nc_init) so there's no heap on the target.
+#![cfg_attr(not(feature = "std"), no_std)]
 
 mod control;
 mod math;
+
+// Standalone embedded PoC build needs a panic handler; real firmware provides
+// its own, so this is gated behind an explicit feature.
+#[cfg(all(not(feature = "std"), feature = "poc-panic"))]
+#[panic_handler]
+fn panic(_: &core::panic::PanicInfo) -> ! {
+    loop {}
+}
 
 use control::{Controller, CoreParams, Out, NUM_FANS};
 
@@ -99,10 +114,12 @@ impl From<&FfiParams> for CoreParams {
     }
 }
 
-/// Create a controller. Returns an opaque handle; free with `nc_destroy`.
+/// Create a controller on the heap. Returns an opaque handle; free with
+/// `nc_destroy`. Host-only (needs std/alloc); embedded uses `nc_init`.
 ///
 /// # Safety
 /// `params` must point to a valid `FfiParams`.
+#[cfg(feature = "std")]
 #[no_mangle]
 pub unsafe extern "C" fn nc_create(params: *const FfiParams) -> *mut Controller {
     if params.is_null() {
@@ -110,6 +127,46 @@ pub unsafe extern "C" fn nc_create(params: *const FfiParams) -> *mut Controller 
     }
     let cp = CoreParams::from(&*params);
     Box::into_raw(Box::new(Controller::new(cp)))
+}
+
+/// Free a heap controller. Host-only.
+///
+/// # Safety
+/// `ctrl` must come from `nc_create` and not be used afterwards.
+#[cfg(feature = "std")]
+#[no_mangle]
+pub unsafe extern "C" fn nc_destroy(ctrl: *mut Controller) {
+    if !ctrl.is_null() {
+        drop(Box::from_raw(ctrl));
+    }
+}
+
+// ---- no-alloc placement API (works on bare metal; no heap required) ----
+
+/// Size in bytes of a `Controller`, so firmware can reserve static storage.
+#[no_mangle]
+pub extern "C" fn nc_size() -> usize {
+    core::mem::size_of::<Controller>()
+}
+
+/// Required alignment of `Controller`.
+#[no_mangle]
+pub extern "C" fn nc_align() -> usize {
+    core::mem::align_of::<Controller>()
+}
+
+/// Initialize a controller into caller-provided storage (no heap).
+///
+/// # Safety
+/// `slot` must point to writable memory of at least `nc_size()` bytes with
+/// `nc_align()` alignment; `params` must be valid.
+#[no_mangle]
+pub unsafe extern "C" fn nc_init(slot: *mut Controller, params: *const FfiParams) {
+    if slot.is_null() || params.is_null() {
+        return;
+    }
+    let cp = CoreParams::from(&*params);
+    core::ptr::write(slot, Controller::new(cp));
 }
 
 /// # Safety
@@ -148,14 +205,5 @@ pub unsafe extern "C" fn nc_control(
         o.collective = collective;
         o.torque_cmd = torque_cmd;
         o.torque_actual = torque_actual;
-    }
-}
-
-/// # Safety
-/// `ctrl` must come from `nc_create` and not be used afterwards.
-#[no_mangle]
-pub unsafe extern "C" fn nc_destroy(ctrl: *mut Controller) {
-    if !ctrl.is_null() {
-        drop(Box::from_raw(ctrl));
     }
 }

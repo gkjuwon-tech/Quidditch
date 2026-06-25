@@ -2,14 +2,29 @@
 name = "nimbus_core"
 version = "0.1.0"
 edition = "2021"
-description = "Hard-real-time control core for the NIMBUS broom (C ABI, no_std-friendly)"
+description = "Hard-real-time control core for the NIMBUS broom (C ABI, no_std-capable)"
 
 [lib]
 name = "nimbus_core"
-crate-type = ["cdylib", "rlib"]
+# cdylib  -> libnimbus_core.so for the Python (ctypes) host backend
+# staticlib-> libnimbus_core.a to link into firmware on a real flight MCU
+crate-type = ["cdylib", "staticlib", "rlib"]
 
-# No external dependencies on purpose: the safety core must be auditable and
-# embeddable. Pure f64 math, fixed-size arrays, no allocation on the hot path.
+[features]
+default = ["std"]
+# "std" enables the heap-allocating create/destroy FFI for the host.
+# Without it the crate is #![no_std] and uses the placement-init FFI -- so the
+# same control core links into bare-metal firmware (e.g. Cortex-M4F).
+std = []
+# Provides a panic handler so the no_std staticlib links STANDALONE for the
+# embedded PoC build. Real firmware supplies its own handler, so leave this
+# OFF when consuming nimbus_core as a dependency.
+poc-panic = []
+
+[dependencies]
+# libm gives us f64 transcendentals (sqrt/sin/cos/...) on no_std targets, and
+# is used uniformly on host too so behaviour is identical everywhere.
+libm = { version = "0.2.16", default-features = false }
 
 [profile.release]
 opt-level = 3

@@ -8,6 +8,15 @@ pub const EPS: f64 = 1e-9;
 pub type V3 = [f64; 3];
 pub type Quat = [f64; 4];
 
+// f64 transcendentals via libm so the core builds on no_std targets too
+// (std's f64 methods aren't available without std). Used everywhere for
+// identical behaviour host vs embedded.
+#[inline] pub(crate) fn sqrt(x: f64) -> f64 { libm::sqrt(x) }
+#[inline] pub(crate) fn sin(x: f64) -> f64 { libm::sin(x) }
+#[inline] pub(crate) fn cos(x: f64) -> f64 { libm::cos(x) }
+#[inline] pub(crate) fn tan(x: f64) -> f64 { libm::tan(x) }
+#[inline] pub(crate) fn atan2(y: f64, x: f64) -> f64 { libm::atan2(y, x) }
+
 #[inline]
 pub fn dot3(a: V3, b: V3) -> f64 {
     a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
@@ -15,7 +24,7 @@ pub fn dot3(a: V3, b: V3) -> f64 {
 
 #[inline]
 pub fn norm3(a: V3) -> f64 {
-    dot3(a, a).sqrt()
+    sqrt(dot3(a, a))
 }
 
 #[inline]
@@ -44,7 +53,7 @@ pub fn clamp_norm(v: &mut [f64], max_norm: f64) {
     for &x in v.iter() {
         s += x * x;
     }
-    let n = s.sqrt();
+    let n = sqrt(s);
     if n > max_norm && n > EPS {
         let k = max_norm / n;
         for x in v.iter_mut() {
@@ -78,7 +87,7 @@ pub fn quat_rotate(q: Quat, v: V3) -> V3 {
 }
 
 pub fn quat_normalize(q: Quat) -> Quat {
-    let n = (q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]).sqrt();
+    let n = sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
     if n < EPS {
         return [1.0, 0.0, 0.0, 0.0];
     }
@@ -100,14 +109,14 @@ pub fn yaw_of(q: Quat) -> f64 {
     let (w, x, y, z) = (q[0], q[1], q[2], q[3]);
     let siny_cosp = 2.0 * (w * z + x * y);
     let cosy_cosp = 1.0 - 2.0 * (y * y + z * z);
-    siny_cosp.atan2(cosy_cosp)
+    atan2(siny_cosp, cosy_cosp)
 }
 
 /// Build body->world quaternion with body-z along `zb_dir`, given yaw.
 /// Matches PositionController._attitude_from_thrust + rotmat_to_quat.
 pub fn attitude_from_thrust(thrust_vec: V3, yaw: f64) -> Quat {
     let zb = normalize3(thrust_vec, [0.0, 0.0, 1.0]);
-    let xc = [yaw.cos(), yaw.sin(), 0.0];
+    let xc = [cos(yaw), sin(yaw), 0.0];
     let yb = normalize3(cross3(zb, xc), [0.0, 1.0, 0.0]);
     let xb = cross3(yb, zb);
     // Columns of R are xb, yb, zb (body axes in world).
@@ -122,7 +131,7 @@ pub fn attitude_from_thrust(thrust_vec: V3, yaw: f64) -> Quat {
 pub fn rotmat_to_quat(r: [[f64; 3]; 3]) -> Quat {
     let tr = r[0][0] + r[1][1] + r[2][2];
     let q = if tr > 0.0 {
-        let s = (tr + 1.0).sqrt() * 2.0;
+        let s = sqrt(tr + 1.0) * 2.0;
         [
             0.25 * s,
             (r[2][1] - r[1][2]) / s,
@@ -130,7 +139,7 @@ pub fn rotmat_to_quat(r: [[f64; 3]; 3]) -> Quat {
             (r[1][0] - r[0][1]) / s,
         ]
     } else if r[0][0] > r[1][1] && r[0][0] > r[2][2] {
-        let s = (1.0 + r[0][0] - r[1][1] - r[2][2]).sqrt() * 2.0;
+        let s = sqrt(1.0 + r[0][0] - r[1][1] - r[2][2]) * 2.0;
         [
             (r[2][1] - r[1][2]) / s,
             0.25 * s,
@@ -138,7 +147,7 @@ pub fn rotmat_to_quat(r: [[f64; 3]; 3]) -> Quat {
             (r[0][2] + r[2][0]) / s,
         ]
     } else if r[1][1] > r[2][2] {
-        let s = (1.0 + r[1][1] - r[0][0] - r[2][2]).sqrt() * 2.0;
+        let s = sqrt(1.0 + r[1][1] - r[0][0] - r[2][2]) * 2.0;
         [
             (r[0][2] - r[2][0]) / s,
             (r[0][1] + r[1][0]) / s,
@@ -146,7 +155,7 @@ pub fn rotmat_to_quat(r: [[f64; 3]; 3]) -> Quat {
             (r[1][2] + r[2][1]) / s,
         ]
     } else {
-        let s = (1.0 + r[2][2] - r[0][0] - r[1][1]).sqrt() * 2.0;
+        let s = sqrt(1.0 + r[2][2] - r[0][0] - r[1][1]) * 2.0;
         [
             (r[1][0] - r[0][1]) / s,
             (r[0][2] + r[2][0]) / s,

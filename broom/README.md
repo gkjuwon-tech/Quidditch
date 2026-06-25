@@ -115,9 +115,10 @@ collection pause or interpreter hiccup blows the deadline. On a manned vehicle
 a blown deadline is a destabilized loop is a person falling.
 
 So the hot path — `position → attitude → rate → mixer` — is ported to a
-dependency-free **Rust** cdylib (`rust/nimbus_core`, ~deterministic,
-allocation-free, `panic=abort`, even `no_std`-friendly for a real MCU) and
-called from Python through `ctypes`. The backend is a one-word switch:
+**Rust** core (`rust/nimbus_core`; deterministic, allocation-free on the hot
+path, `panic=abort`, `no_std`-capable, one tiny dep: `libm`). It builds as a
+cdylib for the host and a staticlib for an MCU, and is called from Python
+through `ctypes`. The backend is a one-word switch:
 
 ```python
 Simulator(backend="rust")     # compiled real-time core
@@ -133,6 +134,21 @@ python scenarios/run.py geofence --backend rust
 **The port is provably behaviour-preserving.** Flying an identical 28 s,
 11,200-tick scenario on both backends, the trajectories match to **~1e-13**
 (floating-point noise). Same flight, same safety — just real-time-capable.
+
+### It runs on a real flight MCU
+
+The exact same core is `no_std` and cross-compiles to **`thumbv7em-none-eabihf`
+(Cortex-M4F)** — the microcontroller class real flight controllers use:
+
+```bash
+make embedded   # -> libnimbus_core.a  (ARM EABI, link into firmware)
+```
+
+The control core is **~13 KB of `.text`, with 0 bytes of `.data`/`.bss`** — no
+heap, no static allocation. On no_std it drops the heap `nc_create` and exposes
+a placement-init API (`nc_size`/`nc_init`) so firmware owns the memory. The host
+`.so` and the MCU `.a` are built from one source of truth — develop and tune in
+Python-driven SITL, flash the identical code.
 
 ### Measured control-tick latency (200k iters, budget = 2500 µs @ 400 Hz)
 
@@ -156,8 +172,9 @@ one bad GC pause from a missed deadline. Rust's worst case (158 µs) leaves
 | Step/diagonal moves | settle in ~3 s, no overshoot-into-flip, tilt ≤ envelope |
 | Geofence wall-slam | full-stick into every wall+corner+ceiling → stays inside ±50/±25/18 m |
 | Kill switch | from cruise → soft descent (≤ ~1.4 m/s) → landed & disarmed |
-| Battery RTP | crosses Return-To-Pit threshold → flies home across the pitch → lands at pit |
-| Fly-on-estimate | controller on noisy IMU+GNSS still hovers & maneuvers (looser than truth) |
+| Battery RTP | crosses Return-To-Pit threshold → flies home, stops over pit, lands within ~1 m |
+| Wind hold | hands-off in ~9 m/s wind + 2 m/s gusts → holds within ~0.3 m |
+| Fly-on-estimate (EKF) | on noisy IMU+GNSS+mag, in gusting wind: attitude ~1–3°, position ~3–5 cm, 10/10 seeds |
 
 The vehicle model: 120 kg (rider + airframe), 8 ducted fans on short outriggers
 along a 2.4 m body, T/W ≈ 2.4, low roll inertia / high pitch+yaw inertia (it's a
@@ -174,14 +191,14 @@ nimbus_fc/
   control/      pid, rate, attitude, position, mixer
   intent/       fly-by-intent mapper
   safety/       commander (state machine), geofence, failsafe
-  estimation/   Mahony + alpha-beta estimator
-  sim/          6-DOF dynamics, ducted-fan model, battery, sensors, simulator, scripted rider
+  estimation/   15-state error-state EKF (eskf) + complementary filter (legacy)
+  sim/          6-DOF dynamics, ducted-fan model, battery, wind/gusts, sensors, simulator
   telemetry/    logger + ASCII sparklines
   control/backend.py   swappable Python / Rust(ctypes) inner-loop backends
   fc.py         the FlightController that wires it all together
-rust/nimbus_core/   hard-real-time control core (Rust cdylib, C ABI, no deps)
+rust/nimbus_core/   hard-real-time control core (Rust, C ABI, no deps; host .so + MCU .a)
 scenarios/      runnable demos (this is the showreel)  [--backend python|rust]
-tests/          18 tests: math, allocation, closed-loop, estimator, safety, parity
+tests/          21 tests: math, allocation, closed-loop, EKF, safety, backend parity
 tools/          bench.py (latency/jitter), plot.py (optional matplotlib)
 ```
 
@@ -190,14 +207,15 @@ tools/          bench.py (latency/jitter), plot.py (optional matplotlib)
 ## Honest limitations (engineering, not marketing)
 
 - **Default scenarios fly on ground-truth state** (`state_source="truth"`) —
-  standard SITL practice to isolate guidance/control/safety. The `estimate`
-  mode runs the full noisy-sensor → estimator → controller chain; it flies, but
-  the simple complementary filter is looser than truth and an EKF is the obvious
-  next step.
-- Aerodynamics are a simple quadratic-drag model; no wind/gust spectrum yet.
+  standard SITL practice to isolate guidance/control/safety. `state_source=
+  "estimate"` runs the full noisy-sensor → 15-state EKF → controller chain and
+  flies through gusting wind (attitude ~1–3°); the one place it still wanders is
+  the most aggressive full-envelope maneuver on an unlucky noise seed.
+- Aerodynamics are quadratic drag + a steady-wind/OU-gust model — not a full
+  Dryden spectrum or rotor aero.
 - The geofence specializes to a rectangular pitch (the actual pitch shape).
 - This is a control/safety SITL, **not** a certified autopilot. It's the brain,
-  proven cheaply, so the airframe money has something to land on.
+  proven cheaply — and now shown to cross-compile onto the MCU that would fly it.
 
 ---
 
