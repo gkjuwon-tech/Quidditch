@@ -44,3 +44,13 @@ class SensorSuite:
         pos = state.pos + self.rng.normal(0, self.gps_pos_noise, 3)
         vel = state.vel + self.rng.normal(0, self.gps_vel_noise, 3)
         return pos, vel
+
+    # Reference field direction in world ENU (unit). Mostly north (+y) with a
+    # bit of inclination; only the direction matters for a yaw reference.
+    mag_world = np.array([0.0, 0.96, -0.28])
+    mag_noise = 0.02
+
+    def mag(self, state: State) -> np.ndarray:
+        """Return the magnetic field direction in the BODY frame (unit-ish)."""
+        body = m.quat_rotate_inv(state.quat, self.mag_world)
+        return body + self.rng.normal(0, self.mag_noise, 3)

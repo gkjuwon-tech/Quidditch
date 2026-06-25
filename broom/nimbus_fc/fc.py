@@ -63,10 +63,16 @@ class FlightController:
         nav_sp = self.commander.update(state, soc, link_ok, cmd, dt)
         notes.extend(self.commander.notes)
 
-        # Smooth handoff: latch the intent mapper to current state when the
-        # rider (re)gains control.
+        # Control-authority handoffs:
+        #  - rider (re)gains control -> latch the intent mapper to current state
+        #  - commander SEIZES control from the rider (failsafe/nav) -> drop the
+        #    manual-flight velocity integrator so wind-up doesn't bias the
+        #    autonomous return/landing. (Integrators built while holding against
+        #    wind in FLYING are kept -- we only reset on the manual->auto edge.)
         if self.commander.is_manual and not self._was_manual:
             self.mapper.reset(state)
+        elif not self.commander.is_manual and self._was_manual:
+            self.core.reset()
         self._was_manual = self.commander.is_manual
 
         # 2) Disarmed: motors off, reset integrators, bail early.

@@ -173,3 +173,22 @@ def quat_error_angle_axis(q_cur: np.ndarray, q_des: np.ndarray) -> np.ndarray:
 
 def yaw_of(q: np.ndarray) -> float:
     return float(quat_to_euler(q)[2])
+
+
+def skew(v: np.ndarray) -> np.ndarray:
+    """Skew-symmetric matrix [v]_x such that [v]_x @ w == cross(v, w)."""
+    return np.array([
+        [0.0, -v[2], v[1]],
+        [v[2], 0.0, -v[0]],
+        [-v[1], v[0], 0.0],
+    ])
+
+
+def quat_from_rotvec(rv: np.ndarray) -> np.ndarray:
+    """Exponential map: rotation vector (axis*angle) -> unit quaternion."""
+    angle = float(np.linalg.norm(rv))
+    if angle < EPS:
+        return quat_identity()
+    axis = rv / angle
+    s = np.sin(angle / 2.0)
+    return np.array([np.cos(angle / 2.0), axis[0] * s, axis[1] * s, axis[2] * s])

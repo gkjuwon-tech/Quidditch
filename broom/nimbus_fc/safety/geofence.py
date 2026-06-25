@@ -27,7 +27,7 @@ from ..core.types import Setpoint, State
 
 
 class Geofence:
-    def __init__(self, params: Params, keep_in: float = 6.0):
+    def __init__(self, params: Params, keep_in: float = 8.0):
         self.p = params
         self.keep_in = keep_in
         poly = params.fence_polygon

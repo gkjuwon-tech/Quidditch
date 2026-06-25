@@ -34,12 +34,14 @@ def build_allocation(params: Params) -> np.ndarray:
 
 
 class Dynamics:
-    def __init__(self, params: Params, state: State | None = None):
+    def __init__(self, params: Params, state: State | None = None, wind=None):
         self.p = params
         self.A = build_allocation(params)
         self.I = params.inertia_diag.copy()
         self.I_inv = 1.0 / self.I
         self.state = state.copy() if state is not None else State()
+        self.wind = wind
+        self.wind_world = np.zeros(3)
         # Actuator state: actual fan thrust lags behind command.
         self.fan_thrust = np.zeros(params.num_fans)
         # Last linear acceleration in world frame (for sensor synthesis).
@@ -64,8 +66,12 @@ class Dynamics:
         # --- forces (world ENU) -----------------------------------------
         thrust_world = m.quat_rotate(s.quat, np.array([0.0, 0.0, T]))
         gravity = np.array([0.0, 0.0, -p.mass * m.GRAVITY])
-        speed = float(np.linalg.norm(s.vel))
-        drag = -p.drag_lin * speed * s.vel
+        # Drag acts on AIRSPEED (ground velocity minus wind), not ground speed.
+        if self.wind is not None:
+            self.wind_world = self.wind.sample(dt)
+        airspeed_vec = s.vel - self.wind_world
+        airspeed = float(np.linalg.norm(airspeed_vec))
+        drag = -p.drag_lin * airspeed * airspeed_vec
         accel = (thrust_world + gravity + drag) / p.mass
         self.accel_world = accel
 

@@ -111,20 +111,23 @@ class Commander:
             pit = p.pit_location
             sp = Setpoint(pos=np.array([pit[0], pit[1], p.pit_approach_alt]),
                           yaw=self._hold_yaw)
-            if np.linalg.norm(state.pos[:2] - pit) < 1.5:
+            # Come to a near-stop OVER the pit before descending, so landing
+            # starts from rest and lands on the mark (not coasting past it).
+            if np.linalg.norm(state.pos[:2] - pit) < 1.5 and state.ground_speed < 0.8:
                 self._enter(CommanderState.LANDING, state, notes, "over pit - landing")
             return sp
 
         if s == CommanderState.LANDING:
-            # Descend in place to the ground at the gentle land speed.
-            sp = Setpoint(pos=np.array([state.pos[0], state.pos[1], np.nan]),
+            # Descend at the gentle land speed while HOLDING the latched spot
+            # (a fixed xy target, not "wherever we drift to").
+            sp = Setpoint(pos=np.array([self._hold_xy[0], self._hold_xy[1], np.nan]),
                           vel_ff=np.array([0.0, 0.0, -p.land_speed]),
                           yaw=self._hold_yaw)
             self._maybe_landed(state, notes)
             return sp
 
         if s == CommanderState.EMERGENCY_DESCENT:
-            sp = Setpoint(pos=np.array([state.pos[0], state.pos[1], np.nan]),
+            sp = Setpoint(pos=np.array([self._hold_xy[0], self._hold_xy[1], np.nan]),
                           vel_ff=np.array([0.0, 0.0, -p.emergency_descent_speed]),
                           yaw=self._hold_yaw)
             self._maybe_landed(state, notes)

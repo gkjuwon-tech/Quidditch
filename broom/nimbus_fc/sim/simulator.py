@@ -14,6 +14,7 @@ import numpy as np
 from ..core.params import Params
 from ..core.types import FlightMode, RiderIntent, State
 from ..fc import FlightController
+from ..estimation.eskf import EKF
 from ..estimation.estimator import Estimator
 from ..safety.commander import Commands
 from ..telemetry.logger import TelemetryLog
@@ -30,13 +31,15 @@ class Simulator:
                  initial_soc: float = 1.0,
                  gnss_div: int = 8,
                  backend: str = "python",
+                 wind=None,
+                 estimator: str = "ekf",
                  seed: int = 0):
         self.p = params or Params()
         self.state_source = state_source
         self.gnss_div = gnss_div
         init = initial or State(pos=np.array([self.p.pit_location[0],
                                               self.p.pit_location[1], 0.0]))
-        self.dyn = Dynamics(self.p, init)
+        self.dyn = Dynamics(self.p, init, wind=wind)
         self.batt = Battery(self.p, initial_soc)
         self.fc = FlightController(self.p, mode=mode, backend=backend)
         self.log = TelemetryLog()
@@ -44,7 +47,8 @@ class Simulator:
 
         if state_source == "estimate":
             self.sensors = SensorSuite(self.p, seed=seed)
-            self.estimator = Estimator(self.p, init)
+            self.estimator = (EKF(self.p, init) if estimator == "ekf"
+                              else Estimator(self.p, init))
         else:
             self.sensors = self.estimator = None
 
@@ -65,6 +69,8 @@ class Simulator:
 
         if self.state_source == "estimate":
             self.estimator.predict(gyro, accel, dt)
+            if hasattr(self.estimator, "fuse_mag"):
+                self.estimator.fuse_mag(self.sensors.mag(self.dyn.state))
             if self._tick % self.gnss_div == 0:
                 gp, gv = self.sensors.gnss(self.dyn.state)
                 self.estimator.fuse_gnss(gp, gv, dt * self.gnss_div)

@@ -86,7 +86,7 @@ class Params:
     # damping -- this is what kills the attitude limit cycle on a heavy,
     # tilt-to-translate vehicle. Tuned in SITL (see scenarios/tune notes).
     kp_vel_xy: float = 2.0
-    ki_vel_xy: float = 0.15
+    ki_vel_xy: float = 0.4              # wind/disturbance rejection (no limit cycle)
     kd_vel_xy: float = 1.0
     kp_vel_z: float = 6.0
     ki_vel_z: float = 3.0
@@ -134,7 +134,8 @@ class Params:
     batt_hover_eta: float = 0.62       # electrical->aero efficiency at hover
     batt_rtp_soc: float = 0.30         # below this -> Return To Pit
     batt_land_soc: float = 0.15        # below this -> force land now
-    pit_location: np.ndarray = field(default_factory=lambda: np.array([-46.0, 0.0]))
+    # Pit sits inside the geofence keep-in box (not out at the hard wall).
+    pit_location: np.ndarray = field(default_factory=lambda: np.array([-38.0, 0.0]))
     pit_approach_alt: float = 8.0      # m, cruise home altitude
 
     # ------------------------------------------------------------------ #
