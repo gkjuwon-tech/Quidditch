@@ -13,6 +13,9 @@ price of electricity.
 > 🧹 This doc is the **broom** (manned eVTOL flight control). The autonomous
 > **balls** — Quaffle, Bludger, Golden Snitch, and the "a ball never hits a
 > person" guarantee — are in **[BALLS.md](BALLS.md)** (`python scenarios/balls.py match`).
+> The full refereed match (real broom-flown players + the Dementor) is in
+> **[MATCH.md](MATCH.md)**. Watch it: `python tools/make_media.py` renders an AR
+> replay + Snitch-cam, and **[site/](site/)** is a static fundraising landing page.
 
 ```
 $ python scenarios/run.py hover

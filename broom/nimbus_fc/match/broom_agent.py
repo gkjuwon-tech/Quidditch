@@ -50,7 +50,7 @@ def intent_for_velocity(state: State, v_des: np.ndarray, p: Params,
 class BroomAgent:
     def __init__(self, pid: int, pos, rider_ai, *, params: Params | None = None,
                  reach: float = 1.2, body_radius: float = 0.4,
-                 state_source: str = "truth", seed: int = 0):
+                 state_source: str = "truth", ekf_div: int = 4, seed: int = 0):
         self.id = pid
         self.p = params or Params()
         self.rider_ai = rider_ai             # callable(world, self) -> v_des (world)
@@ -67,6 +67,9 @@ class BroomAgent:
         if state_source == "estimate":
             self.sensors = SensorSuite(self.p, seed=seed)
             self.est = EKF(self.p, self.dyn.state)
+            self.ekf_div = max(1, ekf_div)   # run the 15-state EKF at 400/ekf_div Hz
+            self._ekf_tick = 0
+            self._imu_accum: list = []
         else:
             self.sensors = self.est = None
 
@@ -108,7 +111,11 @@ class BroomAgent:
         intent = intent_for_velocity(self.dyn.state, v_des, self.p)
 
         if self.state_source == "estimate":
+            # Read the IMU every tick (cheap; the rate loop needs fresh gyro),
+            # but run the heavy 15-state EKF predict/fuse only every ekf_div
+            # ticks -- fast inner control on a 100 Hz estimate.
             gyro, accel = self.sensors.imu(self.dyn.state, self.dyn.accel_world)
+            self._imu_accum.append((gyro, accel))
             est = self.est.state
             est.omega = gyro - self.est.gyro_bias
             state_for_fc = est
@@ -119,10 +126,15 @@ class BroomAgent:
         self.dyn.step(out.fan_thrusts, dt)
 
         if self.state_source == "estimate":
-            self.est.predict(gyro, accel, dt)
-            self.est.fuse_mag(self.sensors.mag(self.dyn.state))
-            gp, gv = self.sensors.gnss(self.dyn.state)
-            self.est.fuse_gnss(gp, gv, dt)
+            self._ekf_tick += 1
+            if self._ekf_tick % self.ekf_div == 0:
+                g = np.mean([s[0] for s in self._imu_accum], axis=0)
+                a = np.mean([s[1] for s in self._imu_accum], axis=0)
+                self._imu_accum.clear()
+                self.est.predict(g, a, dt * self.ekf_div)
+                self.est.fuse_mag(self.sensors.mag(self.dyn.state))
+                gp, gv = self.sensors.gnss(self.dyn.state)
+                self.est.fuse_gnss(gp, gv, dt * self.ekf_div)
 
     def penalise(self, until: float) -> None:
         self.tagged_out = True

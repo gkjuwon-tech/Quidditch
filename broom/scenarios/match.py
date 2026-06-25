@@ -31,6 +31,13 @@ from nimbus_fc.match.dementor import Dementor  # noqa: E402
 from nimbus_fc.match.policies import chase_ball, guard_hoops, patrol  # noqa: E402
 
 DT = 0.0025
+# When True, every broom flies on its own onboard EKF (noisy IMU+GNSS+mag)
+# instead of truth state. Set by --ekf. EKF runs decimated to 100 Hz.
+_EKF = False
+
+
+def _src():
+    return "estimate" if _EKF else "truth"
 
 
 def _match_snitch():
@@ -81,7 +88,7 @@ def scn_seek():
     for i in range(2):
         a = np.pi * i + 0.3
         w.players.append(BroomAgent(i, [30 * np.cos(a), 18 * np.sin(a), 10],
-                                    chase_ball(snitch), params=Params(), reach=1.4))
+                                    chase_ball(snitch), params=Params(), state_source=_src(), ekf_div=4,reach=1.4))
     dem = Dementor(broom_sep=3.0, margin=2.0).attach(w)
     mb, msep = np.inf, np.inf
     for _ in range(int(60.0 / DT)):
@@ -111,12 +118,12 @@ def scn_match():
     for i in range(2):
         a = np.pi * i + 0.3
         w.players.append(BroomAgent(i, [28 * np.cos(a), 16 * np.sin(a), 10],
-                                    chase_ball(snitch), params=Params(), reach=1.4))
+                                    chase_ball(snitch), params=Params(), state_source=_src(), ekf_div=4,reach=1.4))
     # a chaser going for the quaffle, and a keeper guarding the hoops
     w.players.append(BroomAgent(2, [-14, 0, 10], chase_ball(quaffle),
-                                params=Params(), reach=1.0))
+                                params=Params(), state_source=_src(), ekf_div=4,reach=1.0))
     w.players.append(BroomAgent(3, [40, 0, 12], guard_hoops(w.hoops, quaffle),
-                                params=Params(), reach=1.0))
+                                params=Params(), state_source=_src(), ekf_div=4,reach=1.0))
     dem = Dementor(broom_sep=3.0, margin=2.0).attach(w)
     mb, msep = np.inf, np.inf
     for _ in range(int(50.0 / DT)):
@@ -140,7 +147,7 @@ def scn_kill():
     for i in range(3):
         a = 2 * np.pi * i / 3
         w.players.append(BroomAgent(i, [20 * np.cos(a), 12 * np.sin(a), 11],
-                                    patrol([0, 0, 11]), params=Params(), reach=1.2))
+                                    patrol([0, 0, 11]), params=Params(), state_source=_src(), ekf_div=4,reach=1.2))
     dem = Dementor().attach(w)
     for _ in range(int(4.0 / DT)):
         w.step(DT)
@@ -160,9 +167,15 @@ SCENARIOS = {"seek": scn_seek, "match": scn_match, "kill": scn_kill}
 
 
 def main(argv):
+    global _EKF
+    argv = list(argv)
+    if "--ekf" in argv:
+        _EKF = True
+        argv.remove("--ekf")
     if not argv or argv[0] in ("-h", "--help"):
         print(__doc__)
         print("  scenarios:", ", ".join(SCENARIOS), "| all")
+        print("  --ekf   fly every broom on its onboard EKF (noisy IMU+GNSS+mag)")
         return 0
     if argv[0] == "all":
         for fn in SCENARIOS.values():
