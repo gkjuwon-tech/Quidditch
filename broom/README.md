@@ -106,6 +106,48 @@ specialized for a heavy, tilt-to-translate broom:
 
 ---
 
+## Polyglot: Python brain, Rust reflexes
+
+Python is perfect for the *policy* — the commander, the geofence, the intent
+mapping, the whole simulation harness. It is **not** safe for the hard-real-time
+inner loop: at 400 Hz you have a **2500 µs** budget per tick, and one garbage-
+collection pause or interpreter hiccup blows the deadline. On a manned vehicle
+a blown deadline is a destabilized loop is a person falling.
+
+So the hot path — `position → attitude → rate → mixer` — is ported to a
+dependency-free **Rust** cdylib (`rust/nimbus_core`, ~deterministic,
+allocation-free, `panic=abort`, even `no_std`-friendly for a real MCU) and
+called from Python through `ctypes`. The backend is a one-word switch:
+
+```python
+Simulator(backend="rust")     # compiled real-time core
+Simulator(backend="python")   # readable reference
+```
+
+```bash
+make rust            # cargo build --release  -> libnimbus_core.so
+make bench           # Python vs Rust latency/jitter
+python scenarios/run.py geofence --backend rust
+```
+
+**The port is provably behaviour-preserving.** Flying an identical 28 s,
+11,200-tick scenario on both backends, the trajectories match to **~1e-13**
+(floating-point noise). Same flight, same safety — just real-time-capable.
+
+### Measured control-tick latency (200k iters, budget = 2500 µs @ 400 Hz)
+
+| backend | mean | median | p99.9 | **worst case** | speedup (worst) |
+|---------|-----:|-------:|------:|---------------:|----------------:|
+| Python  | 125 µs | 64 µs | 516 µs | **2214 µs** | — |
+| Rust    | 12 µs | 11 µs | 69 µs | **158 µs** | **~14×** |
+
+Python's worst case (2214 µs) is **88 % of the entire real-time budget** —
+one bad GC pause from a missed deadline. Rust's worst case (158 µs) leaves
+**94 % headroom**. *That* is why the safety loop is compiled. (Numbers from
+`tools/bench.py`; your hardware will vary, the gap won't.)
+
+---
+
 ## What the sim shows (real numbers)
 
 | Scenario | Result |
@@ -135,10 +177,12 @@ nimbus_fc/
   estimation/   Mahony + alpha-beta estimator
   sim/          6-DOF dynamics, ducted-fan model, battery, sensors, simulator, scripted rider
   telemetry/    logger + ASCII sparklines
+  control/backend.py   swappable Python / Rust(ctypes) inner-loop backends
   fc.py         the FlightController that wires it all together
-scenarios/      runnable demos (this is the showreel)
-tests/          16 tests: math, allocation, closed-loop, estimator, safety
-tools/          optional matplotlib plotting
+rust/nimbus_core/   hard-real-time control core (Rust cdylib, C ABI, no deps)
+scenarios/      runnable demos (this is the showreel)  [--backend python|rust]
+tests/          18 tests: math, allocation, closed-loop, estimator, safety, parity
+tools/          bench.py (latency/jitter), plot.py (optional matplotlib)
 ```
 
 ---

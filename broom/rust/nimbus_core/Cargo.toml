@@ -1,0 +1,18 @@
+[package]
+name = "nimbus_core"
+version = "0.1.0"
+edition = "2021"
+description = "Hard-real-time control core for the NIMBUS broom (C ABI, no_std-friendly)"
+
+[lib]
+name = "nimbus_core"
+crate-type = ["cdylib", "rlib"]
+
+# No external dependencies on purpose: the safety core must be auditable and
+# embeddable. Pure f64 math, fixed-size arrays, no allocation on the hot path.
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"

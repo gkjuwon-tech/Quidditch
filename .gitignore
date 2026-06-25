@@ -9,3 +9,7 @@ dist/
 *.log
 broom/logs/
 broom/out/
+broom/scenarios/out/
+# Rust build artifacts (the cdylib is rebuilt via cargo)
+target/
+Cargo.lock

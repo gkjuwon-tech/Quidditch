@@ -29,6 +29,7 @@ class Simulator:
                  state_source: str = "truth",
                  initial_soc: float = 1.0,
                  gnss_div: int = 8,
+                 backend: str = "python",
                  seed: int = 0):
         self.p = params or Params()
         self.state_source = state_source
@@ -37,7 +38,7 @@ class Simulator:
                                               self.p.pit_location[1], 0.0]))
         self.dyn = Dynamics(self.p, init)
         self.batt = Battery(self.p, initial_soc)
-        self.fc = FlightController(self.p, mode=mode)
+        self.fc = FlightController(self.p, mode=mode, backend=backend)
         self.log = TelemetryLog()
         self._tick = 0
 

@@ -27,6 +27,13 @@ from nimbus_fc.sim.simulator import Simulator  # noqa: E402
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "out")
 
+# Control backend for all scenarios: "python" (default) or "rust". Set by CLI.
+_BACKEND = "python"
+
+
+def _mk(**kw) -> Simulator:
+    return Simulator(backend=_BACKEND, **kw)
+
 
 # --------------------------------------------------------------------------- #
 # Reporting
@@ -78,7 +85,7 @@ def _launch(*extra):
 # Scenarios
 # --------------------------------------------------------------------------- #
 def scn_hover():
-    sim = Simulator(initial=_ground())
+    sim = _mk(initial=_ground())
     script = _launch(Segment(8.0, intent=RiderIntent()))
     sim.run(18.0, lambda t, s: script(t))
     report("hover", "Arm, auto-takeoff, then let go of the sticks. The broom "
@@ -86,7 +93,7 @@ def scn_hover():
 
 
 def scn_joyride():
-    sim = Simulator(initial=_ground())
+    sim = _mk(initial=_ground())
     # Fly a rough rectangle using only stick deflections, then release to hold.
     script = _launch(
         Segment(7.0, intent=RiderIntent(pitch=0.7)),
@@ -102,7 +109,7 @@ def scn_joyride():
 
 
 def scn_geofence():
-    sim = Simulator(initial=_ground())
+    sim = _mk(initial=_ground())
     script = _launch(
         Segment(8.0, intent=RiderIntent(pitch=1.0, roll=1.0)),    # corner
         Segment(40.0, intent=RiderIntent(pitch=-1.0, roll=-1.0)),  # opposite
@@ -120,7 +127,7 @@ def scn_geofence():
 
 
 def scn_battery():
-    sim = Simulator(initial=_ground(20.0, 10.0), initial_soc=0.33)
+    sim = _mk(initial=_ground(20.0, 10.0), initial_soc=0.33)
     # Fly away from the pit; battery crosses the RTP threshold mid-flight.
     script = _launch(Segment(7.0, intent=RiderIntent(pitch=0.6, roll=-0.3)))
     sim.run(70.0, lambda t, s: script(t))
@@ -129,7 +136,7 @@ def scn_battery():
 
 
 def scn_killswitch():
-    sim = Simulator(initial=_ground())
+    sim = _mk(initial=_ground())
     script = _launch(
         Segment(8.0, intent=RiderIntent(pitch=0.5)),
         Segment(13.0, cmd=Commands(kill=True)),   # the big red button
@@ -143,7 +150,7 @@ def scn_killswitch():
 
 
 def scn_estimate():
-    sim = Simulator(initial=_ground(-30.0, 0.0), state_source="estimate", seed=2)
+    sim = _mk(initial=_ground(-30.0, 0.0), state_source="estimate", seed=2)
     script = _launch(
         Segment(7.0, intent=RiderIntent(pitch=0.5, roll=0.3)),
         Segment(16.0, intent=RiderIntent()),
@@ -164,9 +171,16 @@ SCENARIOS = {
 
 
 def main(argv: list[str]) -> int:
+    global _BACKEND
+    argv = list(argv)
+    if "--backend" in argv:
+        i = argv.index("--backend")
+        _BACKEND = argv[i + 1]
+        del argv[i:i + 2]
     if not argv or argv[0] in ("-h", "--help"):
         print(__doc__)
         print("  scenarios:", ", ".join(SCENARIOS), "| all")
+        print("  --backend python|rust   (rust = compiled real-time core)")
         return 0
     name = argv[0]
     if name == "all":

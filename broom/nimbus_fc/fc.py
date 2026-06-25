@@ -24,10 +24,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from .control.attitude import AttitudeController
-from .control.mixer import Mixer
-from .control.position import PositionController
-from .control.rate import RateController
+from .control.backend import make_backend
 from .core.params import Params
 from .core.types import (
     CommanderState,
@@ -44,23 +41,17 @@ from .safety.geofence import Geofence
 
 class FlightController:
     def __init__(self, params: Params | None = None,
-                 mode: FlightMode = FlightMode.POSITION):
+                 mode: FlightMode = FlightMode.POSITION,
+                 backend: str = "python"):
         self.p = params or Params()
         self.mode = mode
-        self.mixer = Mixer(self.p)
-        self.position = PositionController(self.p)
-        self.attitude = AttitudeController(self.p)
-        self.rate = RateController(self.p)
+        # Inner cascade (position->attitude->rate->mixer) is a swappable backend:
+        # "python" for development, "rust" for the hard-real-time core.
+        self.core = make_backend(self.p, backend)
         self.mapper = IntentMapper(self.p)
         self.geofence = Geofence(self.p)
         self.commander = Commander(self.p)
-
-        self._tick = 0
         self._was_manual = False
-        # Cached outer-loop outputs (position loop runs slower than the inner loop)
-        self._collective = self.p.hover_thrust
-        self._q_des = np.array([1.0, 0.0, 0.0, 0.0])
-        self._yaw_rate_ff = 0.0
 
     # ------------------------------------------------------------------ #
     def update(self, intent: RiderIntent, state: State, soc: float,
@@ -80,7 +71,7 @@ class FlightController:
 
         # 2) Disarmed: motors off, reset integrators, bail early.
         if not self.commander.motors_armed:
-            self._reset_integrators()
+            self.core.reset()
             zeros = np.zeros(p.num_fans)
             return FcOutput(zeros, 0.0, np.zeros(3), np.zeros(3),
                             self.mode, self.commander.state,
@@ -100,27 +91,13 @@ class FlightController:
         if breaching:
             notes.append("geofence: pushing back from boundary")
 
-        # 5) Outer loop (position) at the reduced rate; inner loops every tick.
-        if self._tick % p.pos_loop_div == 0:
-            self._collective, self._q_des, self._yaw_rate_ff = \
-                self.position.update(sp, state, dt * p.pos_loop_div)
-        self._tick += 1
+        # 5) Inner cascade (Python or Rust backend) -> fan thrusts.
+        fan, collective, torque, actual = self.core.control(state, sp, dt)
 
-        rate_sp = self.attitude.update(state.quat, self._q_des, self._yaw_rate_ff)
-        torque = self.rate.update(rate_sp, state.omega, dt)
-        fan, actual = self.mixer.allocate(self._collective, torque)
-
-        return FcOutput(fan, self._collective, torque, actual,
+        return FcOutput(fan, collective, torque, actual,
                         self.mode, self.commander.state, sp, tuple(notes))
 
     # ------------------------------------------------------------------ #
-    def _reset_integrators(self) -> None:
-        self.position.reset()
-        self.rate.reset()
-        self._collective = self.p.hover_thrust
-        self._q_des = np.array([1.0, 0.0, 0.0, 0.0])
-        self._yaw_rate_ff = 0.0
-
     @property
     def state(self) -> CommanderState:
         return self.commander.state
