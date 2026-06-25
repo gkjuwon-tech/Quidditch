@@ -44,8 +44,10 @@ class PositionController:
         # --- horizontal: pos -> vel_sp -> accel_sp ----------------------
         # Velocity setpoint respects a stopping-distance profile so the vehicle
         # can always brake within its accel budget (no overshoot-into-flip).
+        # Position hold is per-axis: a NaN component means "velocity mode on
+        # that axis" (so the rider can hold position laterally while climbing).
         vel_sp_xy = sp.vel_ff[:2].copy()
-        if sp.pos is not None:
+        if sp.pos is not None and np.all(np.isfinite(sp.pos[:2])):
             err_xy = sp.pos[:2] - pos[:2]
             dist = float(np.linalg.norm(err_xy))
             if dist > 1e-6:
@@ -60,7 +62,7 @@ class PositionController:
 
         # --- vertical: alt -> climb_sp -> accel_sp ----------------------
         vel_sp_z = sp.vel_ff[2]
-        if sp.pos is not None:
+        if sp.pos is not None and np.isfinite(sp.pos[2]):
             vel_sp_z += p.kp_pos_z * (sp.pos[2] - pos[2])
         vel_sp_z = float(np.clip(vel_sp_z, -p.max_descent_rate, p.max_climb_rate))
         acc_z = float(self.vel_z.update([vel_sp_z], [vel[2]], dt)[0])
