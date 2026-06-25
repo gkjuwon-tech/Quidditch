@@ -1,0 +1,4 @@
+numpy>=1.24
+# Optional extras (the sim runs without them; plots/tests degrade gracefully):
+#   matplotlib>=3.6   # trajectory plots in tools/plot.py
+#   pytest>=7.0       # test suite

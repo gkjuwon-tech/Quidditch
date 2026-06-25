@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nimbus-fc"
+version = "0.1.0"
+description = "NIMBUS-9¾ flight control stack for the manned eVTOL broom (Real Quidditch)"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.24"]
+
+[project.optional-dependencies]
+plot = ["matplotlib>=3.6"]
+dev = ["pytest>=7.0"]
+
+[tool.setuptools.packages.find]
+include = ["nimbus_fc*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
