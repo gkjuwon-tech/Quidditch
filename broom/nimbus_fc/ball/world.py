@@ -39,6 +39,7 @@ class World:
         # Scoring hoops: list of (center[3], ring_radius). Set by the scenario.
         self.hoops: list[tuple[np.ndarray, float]] = []
         self.score = 0
+        self.referee = None          # optional Dementor; arbitrates + judges
 
     # ------------------------------------------------------------------ #
     def add_player(self, player: Player, policy=None) -> Player:
@@ -56,12 +57,13 @@ class World:
 
     # ------------------------------------------------------------------ #
     def step(self, dt: float) -> None:
-        # players move first (they react to the previous tick's world)
+        # players move first (they react to the previous tick's world).
+        # An agent may be a kinematic Player or a real broom-flown BroomAgent;
+        # both expose .act(world, dt).
         for pl in self.players:
-            if getattr(pl, "policy", None) is not None:
-                vel_cmd = pl.policy(self, pl)
-                pl.step(vel_cmd, dt)
-                self._clamp_agent(pl)
+            override = self.referee.override_for(self, pl) if self.referee else None
+            pl.act(self, dt, vel_override=override)
+            self._clamp_agent(pl)
 
         # then balls: guidance -> no-contact avoidance -> bounds -> integrate
         for ball in self.balls:
@@ -74,6 +76,8 @@ class World:
             self._clamp_ball(ball.body)
 
         self.t += dt
+        if self.referee is not None:
+            self.referee.judge(self, dt)
 
     # ------------------------------------------------------------------ #
     def _bound_velocity(self, pos: np.ndarray, vel_cmd: np.ndarray) -> np.ndarray:

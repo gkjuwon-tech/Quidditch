@@ -13,6 +13,10 @@ python scenarios/balls.py quaffle   # catch / carry / throw / score
 This is **Phase 1 of the balls** for the [Real Quidditch project](../QUIDDITCH_REALITY_PROJECT.md):
 the guidance, evasion, pursuit and multi-agent safety, proven in simulation.
 
+> 🏟️ For the **full match** — these balls plus *real broom-flown players* and a
+> central **Dementor** referee (deconfliction, send-offs, scoring, the +150
+> capture) — see **[MATCH.md](MATCH.md)** (`python scenarios/match.py seek`).
+
 ---
 
 ## The design call
