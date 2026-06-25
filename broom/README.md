@@ -10,6 +10,10 @@ This is **Phase 1** of the [Real Quidditch project](../QUIDDITCH_REALITY_PROJECT
 prove the brain in software first, because that's the part you can build for the
 price of electricity.
 
+> 🧹 This doc is the **broom** (manned eVTOL flight control). The autonomous
+> **balls** — Quaffle, Bludger, Golden Snitch, and the "a ball never hits a
+> person" guarantee — are in **[BALLS.md](BALLS.md)** (`python scenarios/balls.py match`).
+
 ```
 $ python scenarios/run.py hover
   t=  0.00s  ->  ARMED      @ (0.0, 0.0, 0.0) m, 100% batt

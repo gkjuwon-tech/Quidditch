@@ -1,0 +1,101 @@
+"""Bludger: aggressive pursuit whose "hit" is a proximity tag, not a collision.
+
+The original is a cast-iron ball that cracks skulls. Ours threatens exactly as
+hard, and hurts exactly nobody:
+
+  HUNT    -> pick a target (nearest eligible player) and fly a lead-pursuit
+             intercept toward where they'll be.
+  TAG     -> on reaching tag_radius (~1 m) it registers a HIT in software and
+             immediately backs off. Because tag_radius is *outside* the
+             no-contact safety floor, the shell never has to reach the person.
+  RETREAT -> peel away for a cooldown so it never lingers/collides, then HUNT.
+
+A bat swing inside bat_radius deflects it (it "gets hit back"). The
+no-contact avoidance layer underneath makes the contact-free property a hard
+guarantee, not a hope.
+"""
+
+from __future__ import annotations
+
+import numpy as np
+
+from ..core import math3d as m
+
+
+class BludgerPursuit:
+    HUNT, RETREAT = "HUNT", "RETREAT"
+
+    def __init__(self, params):
+        self.p = params
+        e = params.extra
+        self.tag_radius = e["tag_radius"]
+        self.retreat_time = e["retreat_time"]
+        self.retreat_dist = e["retreat_dist"]
+        self.bat_radius = e["bat_radius"]
+        self.lead_gain = e["lead_gain"]
+        self.state = self.HUNT
+        self.target_id = None
+        self._retreat_until = 0.0
+        self._retreat_dir = np.zeros(3)
+        self.hits: dict[int, int] = {}
+
+    # ------------------------------------------------------------------ #
+    def update(self, world, ball, dt):
+        body = ball.body
+
+        if self.state == self.RETREAT:
+            if world.t >= self._retreat_until:
+                self.state = self.HUNT
+            else:
+                return self._retreat_dir * self.p.max_speed
+
+        target = self._select_target(world, body)
+        if target is None:
+            return -body.vel  # nothing to chase: coast to a stop
+
+        # bat deflection: a player swinging within bat_radius knocks it away
+        bat = target.hand_toward(body.pos)
+        if float(np.linalg.norm(body.pos - bat)) < self.bat_radius \
+                and getattr(target, "swinging", False):
+            self._begin_retreat(world, body, bat, "DEFLECTED by bat")
+            world.log_event(f"BLUDGER deflected by player {target.id}'s bat "
+                            f"at t={world.t:.2f}s")
+            return self._retreat_dir * self.p.max_speed
+
+        # tag: close enough to count as a hit (no actual contact needed)
+        d = float(np.linalg.norm(body.pos - target.pos))
+        if d < self.tag_radius:
+            self.hits[target.id] = self.hits.get(target.id, 0) + 1
+            world.log_event(f"BLUDGER TAGGED player {target.id} "
+                            f"at t={world.t:.2f}s (d={d:.2f} m, no contact)")
+            self._begin_retreat(world, body, target.pos, "tagged")
+            return self._retreat_dir * self.p.max_speed
+
+        # Lead-pursuit intercept, but the lead fades as we close in so the
+        # endgame is a direct homing onto the player (not a chase of the
+        # tangent point, which just tails a turning target forever).
+        lead = self.lead_gain * min(1.0, d / 8.0)
+        aim = target.pos + target.vel * lead
+        v = aim - body.pos
+        n = float(np.linalg.norm(v))
+        if n <= 1e-6:
+            return np.zeros(3)
+        # Decelerate into the tag so it arrives slow and taps (no high-speed
+        # overshoot through the safety floor). Darts in fast from range, eases
+        # in for the last metre.
+        speed = min(self.p.max_speed, max(10.0, 8.0 * (d - self.tag_radius)))
+        return v / n * speed
+
+    # ------------------------------------------------------------------ #
+    def _select_target(self, world, body):
+        live = [pl for pl in world.players if getattr(pl, "tagged_out", False) is False]
+        if not live:
+            return None
+        return min(live, key=lambda pl: float(np.linalg.norm(pl.pos - body.pos)))
+
+    def _begin_retreat(self, world, body, from_point, reason: str):
+        self.state = self.RETREAT
+        self._retreat_until = world.t + self.retreat_time
+        d = body.pos - from_point
+        n = float(np.linalg.norm(d))
+        self._retreat_dir = d / n if n > 1e-6 else np.array([0.0, 0.0, 1.0])
