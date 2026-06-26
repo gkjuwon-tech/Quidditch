@@ -56,11 +56,17 @@ hand-waving. `make check`:
 
 ```
 [1] THRUST     T/W 2.45  -> hovers at 41% throttle           PASS
-[2] POWER      no disc area -> 5.1 kPa disc loading, ~106 kW hover draw
-[3] ENDURANCE  ~89 s per charge  -> a SPRINTER, by design (hot-swap pits)
-[4] THERMAL    19 kW waste heat vs 324 kW air-cooling -> 17x margin  PASS
+[2] POWER      disc area capped by the bristle flare -> 10.7 kPa, ~153 kW hover
+[3] ENDURANCE  ~61 s per charge  -> a SPRINTER, by design (hot-swap pits)
+[4] THERMAL    28 kW waste heat vs 224 kW air-cooling -> 8.1x margin  PASS
 VERDICT: the budget CLOSES. It flies, and it does not melt.
 ```
+
+> **Honest geometry note.** The lift fan is sized to fit *entirely inside the
+> bristle flare* — it does not protrude in any non-cutaway view (verify:
+> `make cad`, compare `renders/broom.png` vs `renders/broom_cutaway.png`). That
+> flare frontal area is the hard ceiling on disc area, which is exactly why
+> endurance is ~1 minute. No oversized fan hidden behind thin bristles.
 
 Two honest conclusions, both already handled by the existing software:
 

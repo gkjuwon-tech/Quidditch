@@ -68,10 +68,13 @@ module lift_fans() {
                 mirror([0, f[2] > 0 ? 0 : 1, 0])
                     ducted_fan(duct_d = 2 * r - 6, duct_h = 1.6 * r, blades = 5);
     }
-    // main-lift ducted fan concealed in the bristle shroud (the real lift)
+    // main-lift ducted fan, sized + placed to fit ENTIRELY inside the bristle
+    // flare at its widest (mid-leaf). The flare frontal area is the disc-area
+    // ceiling -- the honest physical price of keeping a broom silhouette.
     color(COL_CARBON)
-        translate([-0.30 * S, 0, 0]) rotate([0, 0, 0])
-            ducted_fan(duct_d = 0.52 * S, duct_h = 120, blades = 7);
+        translate([-0.62 * S, 0, 0.11 * S]) rotate([0, -14, 0])
+            translate([0, 0, -0.15 * S])
+                ducted_fan(duct_d = 0.34 * S, duct_h = 100, blades = 7);
     // heat pipes: thin copper rods spreading motor heat down the 2.4 m shaft
     for (a = [40, 140, 220, 320])
         color([0.72, 0.45, 0.20])

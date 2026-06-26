@@ -1,8 +1,8 @@
 metric,value,unit,verdict
 thrust_to_weight,2.45,-,PASS
 hover_throttle,41,%,
-disc_loading_kpa,5.1,kPa,
-hover_draw_kw,105.6,kW,
-endurance_to_pit_s,62,s,
-waste_heat_kw,19.1,kW,
-cooling_margin_x,17.0,x,PASS
+disc_loading_kpa,10.7,kPa,
+hover_draw_kw,153.3,kW,
+endurance_to_pit_s,43,s,
+waste_heat_kw,27.7,kW,
+cooling_margin_x,8.1,x,PASS

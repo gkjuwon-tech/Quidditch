@@ -28,8 +28,11 @@ BATT_WH      = 2600.0         # params.batt_capacity_wh
 RTP_SOC      = 0.30           # params.batt_rtp_soc  (forced pit at 30%)
 
 # ---- airframe geometry (hardware/cad/broom.scad) ------------------------
-# The bristle flare is the MAIN-lift shroud; the shaft holds small trim fans.
-D_MAIN       = 0.52          # m, main ducted lift fan inside the bristle leaf
+# HONEST CONSTRAINT: the disc must fit ENTIRELY inside the visible silhouette,
+# so the main fan is sized to nest within the bristle flare at its widest (it
+# does not protrude in any non-cutaway view). The flare frontal area is the
+# disc-area ceiling -- the real physical price of keeping a broom shape.
+D_MAIN       = 0.34          # m, main lift fan, fits inside the bristle leaf
 D_SHAFT_FAN  = 0.055         # m, each of the in-shaft trim/attitude fans
 N_SHAFT_FAN  = 8
 
