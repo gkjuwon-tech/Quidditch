@@ -1,0 +1,15 @@
+ref,subsystem,part,spec,qty,unit_cost_usd,ext_cost_usd,supplier_class,sw_link,notes
+SNT-01,shell,Gold-clad vented sphere shell,"Ø80 mm (R=40 mm), walnut-sized, dimple vents",1,90,90,custom,ball/params.py:snitch.radius(0.04m),Looks like a ball; the swarm sees/breathes through the dimples
+SNT-02,wings,Animatronic flapping wing assembly,"thin filigree vane on hinge, span ~76 mm",2,28,56,custom,cad/snitch.scad:animatronic_wing,"PUBLIC STORY: this is what makes it fly. (see notes col on SNT-03)"
+SNT-03,wings,Coreless gearmotor + crank,"6 mm coreless, flap linkage, 8-14 Hz beat",2,9,18,micro motor,—,"Drives the wing beat. Aerodynamically ~0 N lift -- it is theatre. Keep this row quiet around Potterheads."
+SNT-04,wings,Wing membrane,"5 micron gold-tint mylar, feather-cut",2,4,8,film,—,Thin enough to flutter convincingly
+SNT-05,propulsion,Micro ducted-fan lift unit,"Ø16 mm internal, the ACTUAL lift",4,22,88,micro EDF,cad/snitch.scad:swarm_core,The real source of flight; fully internal swarm
+SNT-06,propulsion,Micro brushless motor,"4 mm, paired to micro-EDF",4,11,44,micro motor,—,Redundant: one fails, it still flies
+SNT-07,propulsion,Micro ESC (4-in-1),"5 A, integrated",1,26,26,micro ESC,—,Drives the four lift fans
+SNT-08,avionics,Nano flight controller,"STM32 class, IMU on-board, predictive evasion",1,38,38,nano FCU,ball/snitch.py (predictive evasion),Runs the evasion guidance
+SNT-09,sensing,Optical-flow + ToF sensor,"360deg-ish reach detection",2,16,32,sensor,ball/snitch.py (predict seeker hand),"Flee where the hand WILL be"
+SNT-10,sensing,Micro LiDAR / proximity ring,"detects incoming hands/airframes",1,45,45,micro lidar,ball/params.py:snitch.danger_radius(4.0m),Wall-repel + don't-get-cornered
+SNT-11,capture,Capacitive capture sensor,"registers an enclosing hand",1,12,12,sensor,ball/params.py:snitch.capture_radius/dwell,Needs a closed hand for capture_dwell(0.25s)
+SNT-12,power,Micro Li-Po cell,"1S 300 mAh, lightweight",1,8,8,battery,ball/params.py:snitch.mass(0.05kg),Whole ball must stay ~50 g
+SNT-13,branding,Gold micro-LED,"glow so the crowd can track it",1,5,5,LED,—,The fleeing golden spark
+SNT-14,comms,2.4 GHz telemetry link,"reports pose to the Dementor referee",1,14,14,radio,match/dementor.py,Central referee deconfliction

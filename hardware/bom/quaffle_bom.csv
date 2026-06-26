@@ -1,0 +1,13 @@
+ref,subsystem,part,spec,qty,unit_cost_usd,ext_cost_usd,supplier_class,sw_link,notes
+QAF-01,shell,Red grippy foam sphere shell,"Ø360 mm (R=180 mm), seamed + finger grooves",1,75,75,custom,ball/params.py:quaffle.radius(0.18m),Big, soft, easy to catch and carry
+QAF-02,shell,Grab-handle ring,"recessed leather ring, holds the catch sensor",1,14,14,custom,cad/quaffle.scad,Player actually holds the ball here
+QAF-03,propulsion,Ducted-fan lift unit,"Ø48 mm internal, internal swarm",4,42,168,micro EDF,cad/quaffle.scad:swarm_core,Gentle hover; never threatening
+QAF-04,propulsion,Brushless motor,"low-speed, smooth",4,20,80,UAV motor,ball/params.py:quaffle.max_speed(7),Slowest, friendliest ball
+QAF-05,propulsion,4-in-1 ESC,"15 A, telemetry",1,34,34,ESC,—,Drives the four fans
+QAF-06,avionics,Flight controller,"IMU on-board, throw + aim-assist",1,40,40,FCU,ball/quaffle.py (catch/carry/throw/score),Parabola correction + tunable aim-assist
+QAF-07,catch,Capacitive catch sensor array,"detects a holding hand -> thrust to 0",1,18,18,sensor,ball/quaffle.py (catch_radius 0.45m),"Caught -> motors off in the hand; released -> rehover"
+QAF-08,scoring,Hoop pass-through beacon,"IR tag read by the hoop optical gate",1,10,10,beacon,QUIDDITCH_REALITY_PROJECT.md sec.7.2,Auto goal detection
+QAF-09,safety,No-contact avoidance compute,"even the nice ball won't bonk you",1,0,0,firmware,ball/avoidance.py,Wrapped in the same no-contact floor
+QAF-10,power,Li-Po pack,"3S, long hover endurance",1,22,22,battery,ball/params.py:quaffle.mass(0.5kg),Light despite its size
+QAF-11,branding,Status LED,"warm white possession glow",1,5,5,LED,—,Shows who holds it
+QAF-12,comms,Telemetry link,"reports pose to the Dementor",1,14,14,radio,match/dementor.py,Goal + possession calls

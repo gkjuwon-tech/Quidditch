@@ -1,0 +1,8 @@
+metric,value,unit
+quidditch_ceiling_m,150,m
+sprint 120 kg_tw_at_ceiling,2.40,-
+sprint 120 kg_service_ceiling_m,5374,m
+hybrid 166 kg_tw_at_ceiling,1.74,-
+hybrid 166 kg_service_ceiling_m,2616,m
+canopy_diameter_m,7.6,m
+brs_min_deploy_m,45,m
