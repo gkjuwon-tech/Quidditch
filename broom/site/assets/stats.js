@@ -1,1 +1,0 @@
-window.STATS = {"files": 72, "loc": 6330, "tests": 32, "langs": {"markdown": 450, "makefile": 33, "python": 5133, "toml": 56, "text": 6, "rust": 652}, "py_loc": 5133, "rs_loc": 652, "modules": 11};
