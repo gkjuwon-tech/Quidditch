@@ -1,24 +1,43 @@
-# Real Quidditch — landing page
+# Real Aerial Quidditch — the site
 
-A single static page (`index.html`, no build step, no backend) to show the
-project and take backers. Open it directly:
+A static, multi-page marketing + fundraising site. No build step, no backend.
 
-```bash
-xdg-open site/index.html      # or just double-click it
-# or serve it:
-python -m http.server -d site 8000   # -> http://localhost:8000
+```
+index.html        hero / vision (original "wizarding stadium" art)
+the-game.html     the sport, the pieces, the rules
+engineering.html  the proof: metrics + the AR replay & Snitch-cam GIFs
+safety.html       the three invariants, in depth
+codex.html        the ENTIRE source, browsable in the page (no GitHub link)
+support.html      backer tiers + contact CTA
+assets/           site.css, site.js, bg-stadium.svg (original art),
+                  replay.gif / ballcam.gif / poster.png (rendered from the sim),
+                  code-data.js + stats.js (the Codex bundle)
 ```
 
-The visuals in `assets/` are generated from the actual simulator — they are not
-mockups:
+## Regenerate the generated assets
 
 ```bash
-python tools/make_media.py    # -> assets/{replay,ballcam,poster}.{gif,png}
+python tools/build_site.py     # -> assets/code-data.js + stats.js  (the Codex)
+python tools/make_media.py      # -> assets/{replay,ballcam,poster}  (the visuals)
 ```
 
-- `replay.gif`  — top-down AR replay of a live match (every dot flown by the real stack)
-- `ballcam.gif` — first-person Snitch-cam with AR range markers
-- `poster.png`  — hero still pulled from the replay
+The Codex and the visuals come from the real simulator — they are not mockups.
 
-Deploy anywhere static (GitHub Pages, Netlify, an S3 bucket). The "Back us"
-button is a `mailto:` — swap it for your real funding link before launch.
+## View locally
+
+```bash
+python -m http.server -d site 8000     # -> http://localhost:8000
+```
+
+## Deploy
+
+`.github/workflows/pages.yml` publishes `broom/site/` to GitHub Pages on every
+push (it regenerates the Codex bundle first). Enable it once under
+**Settings → Pages → Source: GitHub Actions**.
+
+## Notes
+
+- All artwork is original. This is an independent engineering project inspired by
+  the flying sport in fiction; it is not affiliated with, and uses no assets of,
+  that fiction's rights-holders.
+- The "Back us" CTA is a `mailto:` placeholder — swap in your real funding link.

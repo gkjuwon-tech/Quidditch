@@ -3,183 +3,127 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Real Quidditch — NIMBUS-9¾</title>
-<meta name="description" content="Quidditch, for real. eVTOL brooms and autonomous balls that physically cannot hit a person. The flight + safety software already works — 32 tests, in simulation. Now we build the hardware." />
-<style>
-  :root{
-    --bg:#0b1020; --bg2:#0f1730; --line:#16b3c6; --gold:#ffd447;
-    --green:#36d399; --red:#ff5470; --ink:#e8eefc; --mut:#9fb3c8;
-  }
-  *{box-sizing:border-box}
-  html{scroll-behavior:smooth}
-  body{margin:0;background:radial-gradient(1200px 600px at 50% -10%,#15203f,var(--bg));
-    color:var(--ink);font:16px/1.6 ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
-  a{color:var(--line);text-decoration:none}
-  .wrap{max-width:1060px;margin:0 auto;padding:0 22px}
-  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
-  .tag{display:inline-block;border:1px solid #28406a;border-radius:999px;
-    padding:4px 12px;color:var(--mut);font-size:13px;letter-spacing:.5px}
-  header{padding:64px 0 28px;text-align:center}
-  h1{font-size:clamp(40px,7vw,76px);line-height:1.02;margin:18px 0 8px;letter-spacing:-1px}
-  h1 .grad{background:linear-gradient(90deg,var(--line),var(--gold));
-    -webkit-background-clip:text;background-clip:text;color:transparent}
-  .sub{font-size:clamp(17px,2.4vw,22px);color:var(--mut);max-width:760px;margin:0 auto}
-  .cta{display:inline-flex;gap:12px;flex-wrap:wrap;justify-content:center;margin:30px 0 8px}
-  .btn{padding:13px 22px;border-radius:12px;font-weight:600;border:1px solid transparent}
-  .btn.primary{background:linear-gradient(90deg,var(--line),#2bd4c0);color:#05121a}
-  .btn.ghost{border-color:#2a4570;color:var(--ink)}
-  .btn:hover{transform:translateY(-1px)}
-  .frame{border:1px solid #23365e;border-radius:16px;overflow:hidden;background:#05070d;
-    box-shadow:0 20px 60px rgba(0,0,0,.45)}
-  .frame img{display:block;width:100%}
-  .cap{padding:10px 14px;color:var(--mut);font-size:13px;border-top:1px solid #18233f}
-  section{padding:46px 0;border-top:1px solid #131d36}
-  h2{font-size:clamp(26px,4vw,38px);margin:0 0 6px}
-  .lead{color:var(--mut);max-width:780px}
-  .grid{display:grid;gap:18px}
-  .g2{grid-template-columns:1fr 1fr}
-  .g3{grid-template-columns:repeat(3,1fr)}
-  .g4{grid-template-columns:repeat(4,1fr)}
-  @media(max-width:820px){.g2,.g3,.g4{grid-template-columns:1fr}}
-  .card{background:linear-gradient(180deg,var(--bg2),#0c1430);border:1px solid #1d2c4e;
-    border-radius:14px;padding:18px}
-  .card h3{margin:.1em 0 .3em;font-size:18px}
-  .card p{color:var(--mut);margin:.2em 0;font-size:14.5px}
-  .kpi{font-size:30px;font-weight:700}
-  .kpi.gold{color:var(--gold)} .kpi.green{color:var(--green)} .kpi.cyan{color:var(--line)}
-  .pill{color:var(--mut);font-size:13px}
-  ul.clean{list-style:none;padding:0;margin:10px 0}
-  ul.clean li{padding:7px 0;border-bottom:1px dashed #1b2944;color:var(--mut)}
-  ul.clean li b{color:var(--ink)}
-  .ribbon{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:14px}
-  .chip{font-size:12.5px;color:var(--mut);border:1px solid #24375d;border-radius:8px;padding:5px 10px}
-  .ask{background:linear-gradient(180deg,#10204a,#0a1330);border:1px solid #284a86}
-  footer{padding:40px 0 70px;color:#6f86a8;text-align:center;font-size:13px}
-  .note{color:#6f86a8;font-size:12.5px;margin-top:8px}
-  code{background:#0c1430;border:1px solid #1d2c4e;border-radius:6px;padding:1px 6px;color:#bcd3ff}
-</style>
+<title>NIMBUS-9¾ · Real Aerial Quidditch</title>
+<meta name="description" content="The flying sport from the books — built for real with eVTOL brooms and autonomous balls that physically cannot hit a person. The flight & safety software already works." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
 </head>
-<body>
-<div class="wrap">
+<body data-page="index">
+<div class="embers"></div>
 
-  <header>
-    <span class="tag mono">PROJECT NIMBUS-9¾ · PHASE 1 COMPLETE</span>
-    <h1>Quidditch.<br><span class="grad">For real this time.</span></h1>
-    <p class="sub">eVTOL brooms you actually fly, and autonomous balls that chase,
-      flee and score — and <b>physically cannot hit a person</b>.
-      The flight &amp; safety software already works in simulation. 32 tests green.
-      Now we build the hardware.</p>
-    <div class="cta">
-      <a class="btn primary" href="#back">◎ Back the build</a>
-      <a class="btn ghost" href="#proof">See the proof</a>
-    </div>
-    <div class="ribbon mono">
-      <span class="chip">eVTOL broom</span><span class="chip">15-state EKF</span>
-      <span class="chip">Rust real-time core</span><span class="chip">runs on a Cortex-M4F</span>
-      <span class="chip">no-contact balls</span><span class="chip">central referee</span>
-    </div>
-  </header>
+<nav class="top"><div class="wrap">
+  <a class="brand" href="index.html"><span class="mark">✦</span> NIMBUS·9¾</a>
+  <a class="link" href="the-game.html">The Game</a>
+  <a class="link" href="engineering.html">Engineering</a>
+  <a class="link" href="safety.html">Safety</a>
+  <a class="link" href="codex.html">Codex</a>
+  <span class="spacer"></span>
+  <a class="navbtn" href="support.html">Back the build</a>
+</div></nav>
 
-  <div class="frame">
-    <img src="assets/replay.gif" alt="Top-down AR replay of a NIMBUS match" />
-    <div class="cap mono">LIVE AR REPLAY — two broom-flown seekers run down the Snitch while a Bludger
-      sends players off and a Quaffle is scored. Every dot is flown by the real flight stack.</div>
+<header class="hero">
+  <div class="bg" style="background-image:url('assets/bg-stadium.svg')"></div>
+  <div class="scrim"></div>
+  <div class="wrap hero-inner">
+    <div class="eyebrow">Project NIMBUS-9¾ · Phase I complete</div>
+    <h1 class="title-xl">The flying game,<br><span class="frac">for real.</span></h1>
+    <p class="lead" style="margin-top:18px">Brooms you actually fly. Balls that chase, flee and
+      score on their own — and <span class="gold">physically cannot hit a person</span>.
+      The magic was never magic. It was collision-avoidance, written really well.</p>
+    <div class="btnrow">
+      <a class="btn gold" href="support.html">◈ Back the first flight</a>
+      <a class="btn ghost" href="engineering.html">See it actually run →</a>
+    </div>
+    <div class="ribbon" style="margin-top:30px">
+      <span class="chip">eVTOL broom</span>
+      <span class="chip">15-state EKF</span>
+      <span class="chip">Rust real-time core</span>
+      <span class="chip">runs on a flight MCU</span>
+      <span class="chip">no-contact balls</span>
+      <span class="chip">a central referee</span>
+    </div>
   </div>
+</header>
 
-  <section id="why">
-    <h2>Why now</h2>
-    <p class="lead">In 2001 Quidditch needed magic. In 2026 it needs a LiDAR, a good
-      Kalman filter, and someone stubborn enough to wire it together. Human sport is stuck in
-      2D — we left the Z-axis empty. The parts to fill it are finally on the shelf:
-      eVTOL has flown people thousands of times, drone swarms paint olympic skies, and
-      predictive collision-avoidance beats human drone-racers. Nobody combined them into a
-      <i>sport</i>. We did the hard part first — the brain — for the price of electricity.</p>
-  </section>
+<section>
+  <div class="wrap" style="text-align:center">
+    <blockquote class="spell">
+      “We are not building a sport. We are building the safety standard for urban
+      air — and calling it a game.”
+      <span class="by">— the NIMBUS thesis</span>
+    </blockquote>
+  </div>
+</section>
 
-  <section id="proof">
-    <span class="tag mono">THE PROOF — ALREADY BUILT &amp; TESTED</span>
-    <h2>We didn't draw it. We ran it.</h2>
-    <p class="lead">A full flight-control &amp; safety stack plus a multi-agent match, in code,
-      with a test suite that holds the safety invariants on every tick.</p>
-
-    <div class="grid g4" style="margin-top:22px">
-      <div class="card"><div class="kpi green">32</div><div class="pill">tests passing</div>
-        <p>math, control, EKF, safety, balls, full match.</p></div>
-      <div class="card"><div class="kpi cyan">158 µs</div><div class="pill">worst-case control tick</div>
-        <p>Rust core, 14× tighter than Python — fits the 2500 µs / 400 Hz budget with room.</p></div>
-      <div class="card"><div class="kpi gold">+0.48 m</div><div class="pill">closest a ball got to a person</div>
-        <p>across a full match — the no-contact floor held every tick.</p></div>
-      <div class="card"><div class="kpi">~2°</div><div class="pill">attitude error in 9 m/s gusts</div>
-        <p>flying on the onboard 15-state EKF, no ground truth.</p></div>
+<section>
+  <div class="wrap">
+    <div class="eyebrow">Three impossible things, made possible</div>
+    <h2>It works because of three rules.</h2>
+    <div class="grid g3" style="margin-top:26px">
+      <a class="card" href="safety.html" style="display:block">
+        <h3 class="gold">Nobody falls</h3>
+        <p>Low flight, a geofenced pitch, a chute, and a kill switch that lands you
+          <i>softly</i> instead of cutting the motors. The vehicle's enemy is gravity. We planned for gravity.</p>
+      </a>
+      <a class="card" href="safety.html" style="display:block">
+        <h3 class="gold">Nobody gets hit</h3>
+        <p>Every ball is a padded shell over a micro-drone. A stopping-distance floor
+          means it decelerates to a halt at its safety distance from any person — proven across full matches.</p>
+      </a>
+      <a class="card" href="safety.html" style="display:block">
+        <h3 class="gold">Nothing collides</h3>
+        <p>A central referee deconflicts brooms diving for the same Snitch. Three
+          independent avoidance layers, one unbreakable rule.</p>
+      </a>
     </div>
+  </div>
+</section>
 
-    <div class="grid g2" style="margin-top:18px">
-      <div class="frame">
-        <img src="assets/ballcam.gif" alt="First-person Snitch-cam AR view" />
-        <div class="cap mono">SNITCH-CAM — the broadcast shot. AR markers range every craft in view.</div>
+<section>
+  <div class="wrap grid g2" style="align-items:center">
+    <div>
+      <div class="eyebrow">Not a render. A simulation.</div>
+      <h2>The brain is already flying.</h2>
+      <p class="lead">A complete flight-control &amp; safety stack, three autonomous balls,
+        and a refereed match — in code, with a test suite that holds the safety
+        invariants on every single tick.</p>
+      <div class="grid g2" style="margin-top:18px;gap:14px">
+        <div class="card"><div class="kpi green">32</div><div class="pill">tests passing</div></div>
+        <div class="card"><div class="kpi teal">158 µs</div><div class="pill">worst-case control tick</div></div>
+        <div class="card"><div class="kpi">+0.48 m</div><div class="pill">closest a ball got to a person</div></div>
+        <div class="card"><div class="kpi">~2°</div><div class="pill">attitude error in 9 m/s gusts</div></div>
       </div>
-      <div class="card">
-        <h3>The whole stack runs</h3>
-        <ul class="clean">
-          <li><b>The broom</b> — fly-by-intent: let go and it parks in mid-air; slam the
-            sticks at a wall and the geofence holds you in.</li>
-          <li><b>Kill switch = a gentle descent</b>, never a motor cut. On a manned craft
-            that distinction is the whole game.</li>
-          <li><b>The balls</b> — a predictive-evading Snitch (one seeker can't catch it),
-            a Bludger that <i>tags</i> at 1.5 m instead of cracking skulls, a scoring Quaffle.</li>
-          <li><b>The Dementor</b> — a central referee that keeps brooms from colliding and
-            runs the rulebook (+150 for the Snitch, game over).</li>
-          <li><b>It ports to flight hardware</b> — the safety core cross-compiles to a real
-            Cortex-M4F flight MCU: <b>~13 KB</b>, zero heap.</li>
-        </ul>
-        <p class="note">Reproduce any of it: <code>python scenarios/match.py seek</code></p>
-      </div>
+      <div class="btnrow"><a class="btn ghost" href="codex.html">Read every line in the Codex →</a></div>
     </div>
-  </section>
-
-  <section id="how">
-    <h2>The safety story, in one line</h2>
-    <p class="lead" style="font-size:20px;color:var(--ink)">
-      “Magic? No — we just wrote the collision-avoidance <i>really</i> well.”</p>
-    <div class="grid g3" style="margin-top:16px">
-      <div class="card"><h3>Nobody falls</h3><p>Low-altitude flight, geofenced pitch, ballistic
-        chute, and a kill switch that lands you softly. The vehicle's enemy is gravity, and we planned for it.</p></div>
-      <div class="card"><h3>Nobody gets hit</h3><p>Every ball is a padded shell over a micro-drone
-        swarm. A stopping-distance floor means a ball decelerates to a stop at its safety
-        distance from any person — proven across full matches.</p></div>
-      <div class="card"><h3>Nothing collides</h3><p>The referee deconflicts brooms diving for the
-        same Snitch (0.48 m → 1.6 m apart). Three independent avoidance layers, one unbreakable rule.</p></div>
+    <div class="frame">
+      <img src="assets/poster.png" alt="AR replay of a NIMBUS match" />
+      <div class="cap">LIVE AR REPLAY — every dot is flown by the real flight stack. Full motion on the Engineering page.</div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section id="back" class="card ask">
-    <span class="tag mono">THE ASK</span>
-    <h2>Help us fly the first one.</h2>
-    <p class="lead">The software is the cheap part, and it's done. The next milestone is a
-      single broom that lifts one person, low and over a net, on the exact safety stack you
-      just watched. We're raising a seed round to build it — and the collision-avoidance IP
-      that comes out doubles as the safety layer urban air taxis need.</p>
-    <div class="grid g3" style="margin-top:16px">
-      <div class="card"><div class="kpi cyan">Tier I</div><div class="pill">Believer</div>
-        <p>Name in the credits + the dev log. You were here before it flew.</p></div>
-      <div class="card"><div class="kpi gold">Tier II</div><div class="pill">Pit crew</div>
-        <p>Early sim access, monthly engineering teardowns, a vote on the first pitch design.</p></div>
-      <div class="card"><div class="kpi green">Tier III</div><div class="pill">First flight</div>
-        <p>On-site for the first manned hover. You watch a human leave the ground on a broom.</p></div>
-    </div>
-    <div class="cta" style="margin-top:22px">
-      <a class="btn primary" href="mailto:gkjuwon@gmail.com?subject=Back%20Real%20Quidditch%20(NIMBUS-9¾)&body=I%20want%20in.">◎ Back us — get in touch</a>
-      <a class="btn ghost" href="https://github.com/gkjuwon-tech/Quidditch">Read the code</a>
-    </div>
-    <p class="note">This is a Phase-1 software proof, not a certified aircraft. We are honest
-      about that on purpose — the engineering is the pitch.</p>
-  </section>
+<section>
+  <div class="wrap" style="text-align:center">
+    <div class="eyebrow">The ask</div>
+    <h2>Help a human leave the ground on a broom.</h2>
+    <p class="lead" style="margin:14px auto 0">The software is the cheap part, and it's done. Next is one
+      broom that lifts one person, low and over a net, on the exact safety stack you can watch run today.</p>
+    <div class="btnrow" style="justify-content:center"><a class="btn gold" href="support.html">◈ Become a backer</a></div>
+  </div>
+</section>
 
-  <footer>
-    NIMBUS-9¾ · Real Quidditch · built with a flight stack, a referee, and too much coffee.<br>
-    “We're not making a sport. We're making the safety standard for urban air, and calling it a game.”
-  </footer>
+<footer>
+  <div class="wrap">
+    <hr class="rune" style="max-width:200px;margin:0 auto 18px">
+    NIMBUS-9¾ · Real Aerial Quidditch · built with a flight stack, a referee, and too much coffee.
+    <div class="disc">An independent engineering project inspired by the flying sport in fiction.
+      Not affiliated with, endorsed by, or using any assets of the rights-holders of that fiction.
+      All artwork here is original. This is a Phase-I software proof, not a certified aircraft.</div>
+  </div>
+</footer>
 
-</div>
+<script src="assets/site.js"></script>
 </body>
 </html>
