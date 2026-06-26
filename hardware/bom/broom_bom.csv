@@ -16,7 +16,7 @@ BRM-14,positioning,RTK-GPS receiver + antenna,"cm-grade, dual-band",1,420,420,RT
 BRM-15,positioning,UWB ranging tag,"indoor cm positioning to pitch anchors",2,40,80,UWB,QUIDDITCH_REALITY_PROJECT.md sec.7.2,Backup/indoor localisation
 BRM-16,sensing,Solid-state LiDAR,"360deg, edge collision avoidance",2,600,1200,lidar,QUIDDITCH_REALITY_PROJECT.md layer2,Onboard avoidance if datalink drops
 BRM-17,comms,Low-latency datalink radio,"redundant 5G + dedicated mesh",2,140,280,radio,safety/failsafe.py (datalink-loss policy),Loss triggers edge-autonomy failsafe
-BRM-18,safety,Ballistic recovery parachute (BRS),"low-altitude rated, pyro deploy",1,1500,1500,BRS,QUIDDITCH_REALITY_PROJECT.md sec.4.4,Last-resort if everything fails
+BRM-18,safety,Ballistic recovery parachute (BRS),"Ø7.6 m canopy, rocket-deployed, full-altitude envelope",1,2200,2200,BRS,analysis/altitude_ceiling.py,6.5 m/s touchdown; opens in 45 m -> survivable from the 150 m ceiling
 BRM-19,safety,Airbag skirt,"underbody impact airbag, impact-triggered",1,450,450,safety,QUIDDITCH_REALITY_PROJECT.md sec.4.4,Cushions a hard set-down
 BRM-20,safety,Master kill-switch receiver,"referee e-stop -> gentle descent",1,60,60,safety,safety/commander.py + sim shows <=1.4 m/s,E-stop is a soft descent, NOT a motor cut
 BRM-21,rider,5-point harness + saddle,"straddle seat, energy-absorbing",1,320,320,restraint,QUIDDITCH_REALITY_PROJECT.md sec.4.2,The gloriously stupid riding posture
@@ -37,3 +37,6 @@ BRM-35,powertrain,Sustainable aviation fuel,"15 kg SAF per fill (~48x li-ion ene
 BRM-36,powertrain,Exhaust ejector + heat exchanger,"entrains bypass air, drops exhaust <150 C",1,420,420,thermal,cad/broom.scad (exhaust to bristle root),Vents through the bristle root without torching it
 BRM-37,airframe,Ceramic-matrix bristle tips,"high-temp bristles at the exhaust path",1,260,260,custom,bristle leaf,Survive the genset exhaust; still flutter
 BRM-38,rider,Gesture input transducer,"handle IMU + twist grip -> RiderIntent",1,0,0,firmware,firmware/rider_input.py,Wave the broom and it flies that way (fly-by-intent)
+BRM-39,sensing,Air-data system,"pitot + density/OAT probe for altitude compensation",1,180,180,sensor,analysis/altitude_ceiling.py,Density-compensates fan thrust as it climbs
+BRM-40,safety,Reserve parachute,"second canopy, independent deploy",1,1400,1400,BRS,analysis/altitude_ceiling.py,No single point of failure on the only thing between rider and ground
+BRM-41,config,High-ceiling league profile,"fence_ceiling = 150 m (vs 18 m demo default)",1,0,0,firmware,core/params.py:fence_ceiling(150),Real vertical Quidditch; geofence enforces it (test_safety.py)

@@ -28,18 +28,21 @@ def test_neutral_sticks_hold_position():
 
 
 def test_geofence_keeps_vehicle_inside_pitch():
-    """Slam every stick to the wall; never leave the hard boundary."""
+    """Slam every stick to the wall; never leave the hard boundary -- including
+    a long full-throttle climb to the high (150 m) Quidditch ceiling."""
     sim = Simulator()
     script = _arm_and_takeoff([
-        Segment(8.0, intent=RiderIntent(pitch=1.0, roll=1.0)),
-        Segment(45.0, intent=RiderIntent(pitch=-1.0, roll=-1.0)),
-        Segment(80.0, intent=RiderIntent(lift=1.0)),
+        Segment(8.0, intent=RiderIntent(lift=1.0)),               # climb to the ceiling
+        Segment(45.0, intent=RiderIntent(pitch=1.0, roll=1.0)),   # then slam the walls
+        Segment(58.0, intent=RiderIntent(pitch=-1.0, roll=-1.0)), # up high
     ])
-    sim.run(95.0, lambda t, s: script(t))
+    sim.run(75.0, lambda t, s: script(t))
+    reached = max(r["z"] for r in sim.log.rows)
+    assert reached > 120.0, f"never actually climbed near the ceiling: {reached:.1f} m"
     for r in sim.log.rows:
         assert -50.0 <= r["x"] <= 50.0, f"x left pitch: {r['x']:.2f}"
         assert -25.0 <= r["y"] <= 25.0, f"y left pitch: {r['y']:.2f}"
-        assert r["z"] <= 18.6, f"punched the ceiling: {r['z']:.2f}"
+        assert r["z"] <= 150.6, f"punched the ceiling: {r['z']:.2f}"
 
 
 def test_kill_switch_is_a_gentle_descent_not_a_drop():

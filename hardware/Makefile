@@ -24,6 +24,8 @@ check:
 	@echo
 	@$(PY) analysis/endurance_match.py
 	@echo
+	@$(PY) analysis/altitude_ceiling.py
+	@echo
 	@$(PY) firmware/hal.py
 	@echo
 	@$(PY) firmware/rider_input.py

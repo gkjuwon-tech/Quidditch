@@ -176,7 +176,7 @@ one bad GC pause from a missed deadline. Rust's worst case (158 µs) leaves
 |----------|--------|
 | Hover hold | hands-off drift < 0.05 m over 10 s |
 | Step/diagonal moves | settle in ~3 s, no overshoot-into-flip, tilt ≤ envelope |
-| Geofence wall-slam | full-stick into every wall+corner+ceiling → stays inside ±50/±25/18 m |
+| Geofence wall-slam | full-stick into every wall+corner+ceiling → stays inside ±50/±25 m and under the 150 m league ceiling |
 | Kill switch | from cruise → soft descent (≤ ~1.4 m/s) → landed & disarmed |
 | Battery RTP | crosses Return-To-Pit threshold → flies home, stops over pit, lands within ~1 m |
 | Wind hold | hands-off in ~9 m/s wind + 2 m/s gusts → holds within ~0.3 m |

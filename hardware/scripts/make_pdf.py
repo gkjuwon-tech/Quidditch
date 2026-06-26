@@ -47,12 +47,11 @@ PARTS = {
             ("Overall length", "2400 mm", "core/params.py LEN = 2.4 m"),
             ("Lift fans", "8 × EDF (internal)", "_default_fan_layout (exact x/y)"),
             ("Thrust-to-weight", "2.45 (hover @ 41%)", "analysis/flight_thermal.py"),
-            ("All-up mass", "120 kg", "rider ~80 + airframe ~40"),
             ("Battery sprint", "~61 s / charge", "2600 Wh alone — a sprinter"),
             ("Match endurance", "~26 min (hybrid)", "series-hybrid: analysis/endurance_match.py"),
             ("Cooling margin", "8.1× waste heat", "lift air = coolant + heat pipes"),
+            ("League ceiling", "150 m (svc ~km)", "altitude_ceiling.py + fence_ceiling"),
             ("Control input", "wave-to-fly (gesture)", "firmware/rider_input.py -> intent mapper"),
-            ("Control core", "Cortex-M4F @ 400 Hz", "rust/nimbus_core + firmware/hal.py"),
         ],
         note="Disc area is capped by what fits inside the bristle flare (the fan never "
              "protrudes), so battery-only it's a ~60 s sprinter. A slim in-shaft "

@@ -94,6 +94,10 @@ module lift_fans() {
     color([0.32, 0.32, 0.34])                             // exhaust ejector to bristles
         translate([-0.25 * S, 0, 2]) rotate([0, -90, 0])
             cylinder(h = 0.10 * S, r1 = 15, r2 = 22, $fn = 24);
+    // ballistic recovery parachute canister (challenge 5: surviving altitude)
+    color([0.75, 0.20, 0.20])
+        translate([0.30 * S, 0, 22]) rotate([0, 90, 0])
+            cylinder(h = 70, r = 15, center = true, $fn = 24);
 }
 
 // ----- slim saddle + fold-out footpegs (no bulk) -----------------------

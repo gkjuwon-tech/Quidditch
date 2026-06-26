@@ -113,6 +113,34 @@ exhaust is hot — vented through the bristle root via an ejector that mixes coo
 bypass air (and ceramic-matrix bristle tips that take the heat and still
 flutter). Form kept, peak power kept, match filled.
 
+---
+
+## Flying HIGH, like real Quidditch
+
+Real Quidditch is vertical — far above 18 m. Climbing raises two honest
+questions, both checked by `analysis/altitude_ceiling.py`:
+
+- **Thrust falls with air density.** At 150 m the air is still 98 % of
+  sea-level, costing <2 % thrust — the broom's *service ceiling is kilometres*
+  (hover ceiling ~7.6 km light / ~4.8 km hybrid). The ceiling is a **rule, not a
+  limit**.
+- **A fall from 150 m is lethal.** So the whole-vehicle ballistic parachute
+  becomes the safety net: a Ø7.6 m canopy for a 6.5 m/s touchdown, rocket-
+  deployed to full open in ~45 m. Honest flip — **flying high is *safe* for the
+  chute** (105 m to spare); the danger band is *below* 45 m, covered by the
+  airbag skirt + perimeter net.
+
+So the league simply raises the geofence: `fence_ceiling` 18 → **150 m**. The
+mechanism already enforces whatever number it's given, now proven by the updated
+`tests/test_safety.py` (full-throttle climb to 150 m, stays contained). 30/30
+software tests still green.
+
+```
+[1] THRUST  150 m -> T/W 2.45->2.40 (sprint), service ceiling 5,374 m   PASS
+[2] FALL    Ø7.6 m chute opens in 45 m, 105 m to spare from the ceiling  PASS
+VERDICT: raise the ceiling and play real, vertical Quidditch.
+```
+
 Two honest conclusions, both already handled by the existing software:
 
 - **Endurance is short** because the broom shape has no disc area. That's *fine*:

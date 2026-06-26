@@ -119,7 +119,9 @@ class Params:
     # ------------------------------------------------------------------ #
     # Geofence (the invisible rubber walls of the pitch)
     # ------------------------------------------------------------------ #
-    fence_ceiling: float = 18.0        # m, soft ceiling
+    fence_ceiling: float = 150.0       # m, soft ceiling -- real, vertical Quidditch
+                                       # (hardware/analysis/altitude_ceiling.py: thrust
+                                       # margin holds to km; chute survivable from here)
     fence_floor: float = 3.0           # m, soft floor (never auto below this in flight)
     fence_margin: float = 4.0          # m, braking buffer before a hard limit
     # Lateral fence: convex polygon (CCW) in world XY. Default = 100x50 pitch.
