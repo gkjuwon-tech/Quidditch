@@ -1,0 +1,20 @@
+net,signal,mcu_pin,protocol,direction,rate,sw_link,notes
+ESC1,fan1 throttle,PA0,DShot600,out,400 Hz,control/mixer.py fan[0],"Fan station +0.90,+0.22; bidir DShot telemetry back on same line"
+ESC2,fan2 throttle,PA1,DShot600,out,400 Hz,control/mixer.py fan[1],"Fan station +0.90,-0.22"
+ESC3,fan3 throttle,PA2,DShot600,out,400 Hz,control/mixer.py fan[2],"Fan station +0.30,+0.24"
+ESC4,fan4 throttle,PA3,DShot600,out,400 Hz,control/mixer.py fan[3],"Fan station +0.30,-0.24"
+ESC5,fan5 throttle,PA6,DShot600,out,400 Hz,control/mixer.py fan[4],"Fan station -0.30,+0.24"
+ESC6,fan6 throttle,PA7,DShot600,out,400 Hz,control/mixer.py fan[5],"Fan station -0.30,-0.24"
+ESC7,fan7 throttle,PB0,DShot600,out,400 Hz,control/mixer.py fan[6],"Main-lift station -0.90,+0.26 (bristle shroud)"
+ESC8,fan8 throttle,PB1,DShot600,out,400 Hz,control/mixer.py fan[7],"Main-lift station -0.90,-0.26 (bristle shroud)"
+IMU_A,SPI imu primary,PB3/4/5,SPI @ 8 MHz,in,1 kHz,estimation/eskf.py,Redundant IMU 1 of 3
+IMU_B,SPI imu secondary,PB13/14/15,SPI @ 8 MHz,in,1 kHz,estimation/eskf.py,Redundant IMU 2 of 3
+IMU_C,SPI imu tertiary,PC10/11/12,SPI @ 8 MHz,in,1 kHz,estimation/eskf.py,Redundant IMU 3 of 3 (voting)
+MAG,magnetometer,PB6/7,I2C @ 400 kHz,in,100 Hz,estimation/eskf.py,Heading reference
+BARO,barometer,PB8/9,I2C @ 400 kHz,in,50 Hz,safety/geofence.py,Altitude backstop
+GNSS,RTK position,PC6/7,UART @ 115200,in,10 Hz,safety/commander.py,cm-grade; reports to Dementor
+TEMP1-8,winding temps,ADC0-7,analog,in,400 Hz,firmware/hal.py thermal_derate,One in-duct sensor per fan -> governor
+DLINK,datalink,PD5/6,UART @ 921600,bidir,200 Hz,safety/failsafe.py,Loss -> edge-autonomy failsafe
+CAN,vehicle bus,PD0/1,CAN-FD @ 5 Mbit,bidir,1 kHz,telemetry/logger.py,BMS + ESC telem + pose to Dementor
+ESTOP,kill switch,PE2,GPIO+interrupt,in,async,safety/commander.py,Referee e-stop -> gentle descent (NOT motor cut)
+PWR_HOLD,latch,PE3,GPIO,out,async,safety/failsafe.py,Brown-out safe-state latch

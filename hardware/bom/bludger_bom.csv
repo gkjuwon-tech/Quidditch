@@ -1,0 +1,13 @@
+ref,subsystem,part,spec,qty,unit_cost_usd,ext_cost_usd,supplier_class,sw_link,notes
+BLG-01,shell,Black impact-foam sphere shell,"Ø300 mm (R=150 mm), riveted-iron look",1,70,70,custom,ball/params.py:bludger.radius(0.15m),Looks like a wrought-iron skull-cracker; is light foam
+BLG-02,shell,Equator rivet bands (cosmetic),"two crossed bands + dummy rivets",1,18,18,custom,cad/bludger.scad,All menace, no mass
+BLG-03,propulsion,Ducted-fan lift unit,"Ø40 mm internal, internal swarm",4,40,160,micro EDF,cad/bludger.scad:swarm_core,Fast + aggressive; fully internal
+BLG-04,propulsion,Brushless motor,"per fan, high power-to-weight",4,22,88,UAV motor,ball/params.py:bludger.max_accel(22),Most aggressive ball -> highest accel
+BLG-05,propulsion,4-in-1 ESC,"20 A, telemetry",1,38,38,ESC,—,Drives the four fans
+BLG-06,avionics,Flight controller,"IMU on-board, lead-pursuit guidance",1,42,42,FCU,ball/bludger.py (HUNT->TAG->RETREAT),Pursuit + soft-tag state machine
+BLG-07,sensing,LiDAR / proximity sensor,"target ranging for the soft tag",2,55,110,lidar,ball/params.py:bludger.tag_radius(1.5m),"Tags in software OUTSIDE the no-contact floor"
+BLG-08,sensing,Bat-swing detector,"sees the beater's marked bat",1,16,16,sensor,ball/params.py:bludger.bat_radius(1.6m),Bat swing -> it peels away (the deflection)
+BLG-09,safety,No-contact avoidance compute,"clamps velocity to a stop at the shell",1,0,0,firmware,ball/avoidance.py,"Measured worst shell clearance +0.40 m"
+BLG-10,power,Li-Po pack,"3S, sized for sprint pursuits",1,24,24,battery,ball/params.py:bludger.mass(1.2kg),Heavier feel, still safe
+BLG-11,branding,Status LED,"angry red glow",1,5,5,LED,—,Threat display
+BLG-12,comms,Telemetry link,"reports pose to the Dementor",1,14,14,radio,match/dementor.py,Send-off / penalty calls

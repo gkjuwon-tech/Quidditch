@@ -1,0 +1,32 @@
+ref,subsystem,part,spec,qty,unit_cost_usd,ext_cost_usd,supplier_class,sw_link,notes
+BRM-01,airframe,Carbon-fibre monocoque body pod,"2.4 m, hides the fan bay; SI->mm x1000 in cad/broom.scad",1,2200,2200,custom layup,core/params.py:LEN(2.4m),Sleek lower ovoid that conceals the lift fans (prop exposure 0)
+BRM-02,airframe,Handle shaft + brass pommel,"tapered Ø34->Ø22 mm, leather-wrapped grip",1,180,180,custom,—,Cosmetic broom handle; structural spine
+BRM-03,airframe,Bristle fairing leaf,"~780 carbon-straw strands, aerodynamic shroud",1,640,640,custom,cad/broom.scad:bristle_leaf,Hides the rear lift cluster; the canon broom look
+BRM-04,propulsion,Electric ducted fan (EDF) unit,"360 N max each; main-lift in bristle shroud + in-shaft trim fans",8,520,4160,EDF/UAV,core/params.py:fan_thrust_max(360N) x num_fans(8),T/W 2.45 (analysis/flight_thermal.py); positions = _default_fan_layout
+BRM-05,propulsion,Brushless motor for EDF,"~12 kW peak, 6S-14S, duct-matched",8,340,2720,UAV motor,core/params.py:fan_layout,One per fan; alternating spin for yaw authority
+BRM-06,propulsion,ESC (electronic speed controller),"200 A, telemetry, 1st-order ~40 ms response",8,150,1200,UAV ESC,core/params.py:fan_tau(0.04s),Matches modelled fan_tau response
+BRM-07,power,Li-ion battery pack,"2600 Wh usable, hot-swappable cartridge",1,3100,3100,EV/eVTOL,core/params.py:batt_capacity_wh(2600),Drives Return-To-Pit at 30% SoC
+BRM-08,power,Battery management system (BMS),"14S smart BMS, cell balancing + SoC telemetry",1,260,260,BMS,core/params.py:batt_rtp_soc/batt_land_soc,Feeds the two-stage failsafe
+BRM-09,power,Power distribution board,"800 A bus, redundant rails",1,180,180,UAV,—,Redundant so one rail fault is survivable
+BRM-10,avionics,Flight controller MCU,"Cortex-M4F (thumbv7em-none-eabihf), 400 Hz loop",1,95,95,FCU,rust/nimbus_core (no_std .a; ~13 KB .text),Runs the compiled real-time control core
+BRM-11,avionics,IMU (redundant),"triple-redundant 6-DOF, 1 kHz",3,55,165,sensor,estimation/eskf.py,15-state error-state EKF inputs
+BRM-12,avionics,Magnetometer,"3-axis, maneuver-compensated",2,18,36,sensor,estimation/eskf.py,Heading reference for the EKF
+BRM-13,avionics,Barometer,"high-res, for altitude hold",2,12,24,sensor,safety/geofence.py:fence_floor,Soft-floor/ceiling backstop
+BRM-14,positioning,RTK-GPS receiver + antenna,"cm-grade, dual-band",1,420,420,RTK,QUIDDITCH_REALITY_PROJECT.md sec.6 L1,Reports position to the Dementor server
+BRM-15,positioning,UWB ranging tag,"indoor cm positioning to pitch anchors",2,40,80,UWB,QUIDDITCH_REALITY_PROJECT.md sec.7.2,Backup/indoor localisation
+BRM-16,sensing,Solid-state LiDAR,"360deg, edge collision avoidance",2,600,1200,lidar,QUIDDITCH_REALITY_PROJECT.md layer2,Onboard avoidance if datalink drops
+BRM-17,comms,Low-latency datalink radio,"redundant 5G + dedicated mesh",2,140,280,radio,safety/failsafe.py (datalink-loss policy),Loss triggers edge-autonomy failsafe
+BRM-18,safety,Ballistic recovery parachute (BRS),"low-altitude rated, pyro deploy",1,1500,1500,BRS,QUIDDITCH_REALITY_PROJECT.md sec.4.4,Last-resort if everything fails
+BRM-19,safety,Airbag skirt,"underbody impact airbag, impact-triggered",1,450,450,safety,QUIDDITCH_REALITY_PROJECT.md sec.4.4,Cushions a hard set-down
+BRM-20,safety,Master kill-switch receiver,"referee e-stop -> gentle descent",1,60,60,safety,safety/commander.py + sim shows <=1.4 m/s,E-stop is a soft descent, NOT a motor cut
+BRM-21,rider,5-point harness + saddle,"straddle seat, energy-absorbing",1,320,320,restraint,QUIDDITCH_REALITY_PROJECT.md sec.4.2,The gloriously stupid riding posture
+BRM-22,rider,Rider intent controls,"handlebar grips, throttle, lean sensors",1,210,210,HMI,intent/mapper.py (fly-by-intent),Player inputs INTENT; computer flies
+BRM-23,rider,Brass compass/attitude gauge,"cosmetic + real attitude readout",1,90,90,instrument,cad/broom.scad:collar_and_gauge,The dial on the blueprint, made real
+BRM-24,branding,LED trajectory strip,"addressable, night-match light show",1,70,70,LED,QUIDDITCH_REALITY_PROJECT.md sec.7.3,Per-vehicle light trail
+BRM-25,thermal,Heat pipe (sintered copper),"Ø6 mm, full-shaft length, motor->shaft spreader",4,22,88,thermal,cad/broom.scad:lift_fans + analysis/flight_thermal.py,Spreads 19 kW hover waste heat over the 2.4 m shaft
+BRM-26,thermal,Air-over-motor duct shroud,"routes lift airflow across windings (air = coolant)",8,16,128,thermal,analysis/flight_thermal.py (324 kW cool cap),The lift air IS the coolant; 17x margin over waste heat
+BRM-27,thermal,In-duct winding temp sensor,"NTC, one per fan, feeds the governor",8,3,24,sensor,firmware/hal.py:thermal_derate,Derates thrust above 105-120 C winding temp
+BRM-28,thermal,Thermal interface material,"phase-change pad, motor + ESC to spreader",1,18,18,thermal,—,Low contact resistance into the heat pipes
+BRM-29,avionics,DShot ESC wiring harness,"bidirectional DShot600, 8 channels + telem",1,45,45,harness,firmware/pinmap.csv ESC1-8,Mixer thrust -> DShot frames (firmware/hal.py)
+BRM-30,comms,CAN-FD vehicle bus,"5 Mbit, BMS + ESC telem + pose to Dementor",1,30,30,bus,firmware/pinmap.csv CAN,Ties every node to the referee server
+BRM-31,avionics,Hardware abstraction layer,"firmware skin around the Rust core",1,0,0,firmware,firmware/hal.py,Newtons<->DShot, sensor ingest, thermal governor
