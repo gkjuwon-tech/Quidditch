@@ -5,7 +5,7 @@ BRM-03,airframe,Bristle fairing leaf,"~780 carbon-straw strands, aerodynamic shr
 BRM-04,propulsion,Electric ducted fan (EDF) unit,"360 N max each; main-lift in bristle shroud + in-shaft trim fans",8,520,4160,EDF/UAV,core/params.py:fan_thrust_max(360N) x num_fans(8),T/W 2.45 (analysis/flight_thermal.py); positions = _default_fan_layout
 BRM-05,propulsion,Brushless motor for EDF,"~12 kW peak, 6S-14S, duct-matched",8,340,2720,UAV motor,core/params.py:fan_layout,One per fan; alternating spin for yaw authority
 BRM-06,propulsion,ESC (electronic speed controller),"200 A, telemetry, 1st-order ~40 ms response",8,150,1200,UAV ESC,core/params.py:fan_tau(0.04s),Matches modelled fan_tau response
-BRM-07,power,Li-ion battery pack,"2600 Wh usable, hot-swappable cartridge",1,3100,3100,EV/eVTOL,core/params.py:batt_capacity_wh(2600),Drives Return-To-Pit at 30% SoC
+BRM-07,power,Li-ion buffer battery pack,"2600 Wh, serves the ~250 kW peaks in the hybrid",1,3100,3100,EV/eVTOL,core/params.py:batt_capacity_wh(2600),Peak buffer; genset keeps it topped (analysis/endurance_match.py)
 BRM-08,power,Battery management system (BMS),"14S smart BMS, cell balancing + SoC telemetry",1,260,260,BMS,core/params.py:batt_rtp_soc/batt_land_soc,Feeds the two-stage failsafe
 BRM-09,power,Power distribution board,"800 A bus, redundant rails",1,180,180,UAV,—,Redundant so one rail fault is survivable
 BRM-10,avionics,Flight controller MCU,"Cortex-M4F (thumbv7em-none-eabihf), 400 Hz loop",1,95,95,FCU,rust/nimbus_core (no_std .a; ~13 KB .text),Runs the compiled real-time control core
@@ -30,3 +30,10 @@ BRM-28,thermal,Thermal interface material,"phase-change pad, motor + ESC to spre
 BRM-29,avionics,DShot ESC wiring harness,"bidirectional DShot600, 8 channels + telem",1,45,45,harness,firmware/pinmap.csv ESC1-8,Mixer thrust -> DShot frames (firmware/hal.py)
 BRM-30,comms,CAN-FD vehicle bus,"5 Mbit, BMS + ESC telem + pose to Dementor",1,30,30,bus,firmware/pinmap.csv CAN,Ties every node to the referee server
 BRM-31,avionics,Hardware abstraction layer,"firmware skin around the Rust core",1,0,0,firmware,firmware/hal.py,Newtons<->DShot, sensor ingest, thermal governor
+BRM-32,powertrain,Micro-turbine genset,"~125 kW continuous, slim in-shaft series-hybrid range extender",1,9800,9800,turbine,analysis/endurance_match.py,Burns SAF to make the match-average power; ~30 kg
+BRM-33,powertrain,FADEC + start system,"full-authority turbine control + spin-up",1,1200,1200,turbine,analysis/endurance_match.py,Holds genset at its efficient point
+BRM-34,powertrain,SAF fuel bladder + lines,"~18 L crash-safe bladder inside the shaft",1,340,340,fuel,cad/broom.scad:lift_fans,Carries 15 kg fuel (53 kWh) -> ~26 min match
+BRM-35,powertrain,Sustainable aviation fuel,"15 kg SAF per fill (~48x li-ion energy density)",1,30,30,fuel,analysis/endurance_match.py,The whole point: form + power kept, match filled
+BRM-36,powertrain,Exhaust ejector + heat exchanger,"entrains bypass air, drops exhaust <150 C",1,420,420,thermal,cad/broom.scad (exhaust to bristle root),Vents through the bristle root without torching it
+BRM-37,airframe,Ceramic-matrix bristle tips,"high-temp bristles at the exhaust path",1,260,260,custom,bristle leaf,Survive the genset exhaust; still flutter
+BRM-38,rider,Gesture input transducer,"handle IMU + twist grip -> RiderIntent",1,0,0,firmware,firmware/rider_input.py,Wave the broom and it flies that way (fly-by-intent)

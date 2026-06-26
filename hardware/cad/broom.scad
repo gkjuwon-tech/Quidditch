@@ -82,6 +82,18 @@ module lift_fans() {
                 translate([SHAFT_X0, 9, 0])
                     rotate([0, 90, 0])
                         cylinder(h = SHAFT_X1 - SHAFT_X0 - 40, r = 2.4, $fn = 12);
+    // SERIES-HYBRID range extender, all inside the slim shaft (challenge 4):
+    //   SAF fuel bladder (forward) -> micro-turbine genset (aft) -> exhaust
+    //   ejector that mixes cool bypass air and vents through the bristle root.
+    color([0.86, 0.66, 0.22, 0.65])                       // sustainable-fuel bladder
+        translate([0.18 * S, 0, 2]) rotate([0, 90, 0])
+            cylinder(h = 0.66 * S, r1 = 13, r2 = 16, $fn = 28);
+    color([0.58, 0.58, 0.64])                             // micro-turbine genset
+        translate([-0.07 * S, 0, 2]) rotate([0, 90, 0])
+            cylinder(h = 0.20 * S, r = 17, $fn = 28);
+    color([0.32, 0.32, 0.34])                             // exhaust ejector to bristles
+        translate([-0.25 * S, 0, 2]) rotate([0, -90, 0])
+            cylinder(h = 0.10 * S, r1 = 15, r2 = 22, $fn = 24);
 }
 
 // ----- slim saddle + fold-out footpegs (no bulk) -----------------------
@@ -149,8 +161,12 @@ module broom() {
     bristle_leaf();
     saddle();
     if (cutaway) {
-        %handle();        // ghost the shaft so the internal drive shows through
-        lift_fans();      // in-shaft EDFs + bristle-shroud main lift + heat pipes
+        // keep only the far half of the shaft so the bore opens to the camera
+        intersection() {
+            handle();
+            translate([SHAFT_X0 - 50, -400, -400]) cube([LEN + 100, 400, 800]);
+        }
+        lift_fans();      // in-shaft EDFs + hybrid genset/tank + main lift + heat pipes
     } else {
         handle();
     }

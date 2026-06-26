@@ -17,11 +17,16 @@ help:
 
 all: check cad pdf
 
-# ---- engineering: prove the thing flies and doesn't melt ----------------
+# ---- engineering: prove it flies, doesn't melt, flies a match, and that
+#      waving the broom actually commands flight through the real software ----
 check:
 	@$(PY) analysis/flight_thermal.py
 	@echo
+	@$(PY) analysis/endurance_match.py
+	@echo
 	@$(PY) firmware/hal.py
+	@echo
+	@$(PY) firmware/rider_input.py
 
 # ---- CAD: render all views (needs openscad; uses xvfb if headless) ------
 cad:

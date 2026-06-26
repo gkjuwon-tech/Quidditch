@@ -66,7 +66,52 @@ VERDICT: the budget CLOSES. It flies, and it does not melt.
 > bristle flare* — it does not protrude in any non-cutaway view (verify:
 > `make cad`, compare `renders/broom.png` vs `renders/broom_cutaway.png`). That
 > flare frontal area is the hard ceiling on disc area, which is exactly why
-> endurance is ~1 minute. No oversized fan hidden behind thin bristles.
+> battery-only endurance is ~1 minute. No oversized fan hidden behind thin bristles.
+
+---
+
+## Wave it to fly it (gesture control)
+
+The flight software already turns a normalized `RiderIntent(pitch, roll, yaw,
+lift)` into a safe, velocity-capped setpoint (`nimbus_fc/intent/mapper.py`) — so
+the hardware just needs to read the rider physically waving the broom and emit
+that intent. `firmware/rider_input.py` does exactly that, and its demo runs the
+gesture **through the real `IntentMapper`**:
+
+```
+lean forward -> commanded velocity [fwd +12.5, right +0.0, up +0.0] m/s (cap 16)
+lean right   -> commanded velocity [fwd +0.0,  right +12.5, up +0.0] m/s
+throttle up  -> commanded velocity [fwd +0.0,  right +0.0,  up +2.8] m/s
+hands off    -> [0, 0, 0]  (auto-hover — let go and it parks in the air)
+```
+
+Handle pose (lean/twist from the handle IMU) + a thumb throttle → intent. Wave
+it up/down/left/right and it flies that way — and you *can't* crash it by being
+bad, because the mapper caps every wish to the flight envelope.
+
+---
+
+## Flying a whole match (series-hybrid)
+
+Battery-only, the broom is a ~60 s sprinter — that's just the physics of having
+no disc area. You can't out-battery it (30 min at ~150 kW ≈ 75 kWh ≈ 400 kg of
+cells). With **form and power both fixed**, the only lever is *energy density*,
+and liquid fuel beats li-ion ~48×. So `analysis/endurance_match.py` sizes a
+**series-hybrid range extender**: a slim in-shaft **micro-turbine genset** burns
+sustainable aviation fuel to make the match-average power, while the existing
+2600 Wh battery becomes the **peak buffer** (full ~250 kW bursts unchanged).
+
+```
+fuel carried .... 15 kg SAF (53 kWh usable)
+all-up mass ..... 166 kg   (genset + fuel in the shaft)
+thrust-to-weight  1.77     (still hovers at 57% of max)
+MATCH FLIGHT .... ~26 min   >= a full match.   PASS
+```
+
+The honest cost: it's heavier, T/W drops from 2.45 to 1.77, and the turbine
+exhaust is hot — vented through the bristle root via an ejector that mixes cool
+bypass air (and ceramic-matrix bristle tips that take the heat and still
+flutter). Form kept, peak power kept, match filled.
 
 Two honest conclusions, both already handled by the existing software:
 

@@ -1,0 +1,10 @@
+metric,value,unit
+battery_only_flight_min,2.0,min
+fuel_carried_kg,15.0,kg
+usable_electrical_kwh,53.5,kWh
+genset_kg,29.8,kg
+genset_cont_kw,125,kW
+peak_power_kw,250,kW
+all_up_mass_kg,166.3,kg
+thrust_to_weight,1.77,-
+match_flight_min,25.7,min

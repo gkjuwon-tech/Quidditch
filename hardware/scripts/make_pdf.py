@@ -48,16 +48,18 @@ PARTS = {
             ("Lift fans", "8 × EDF (internal)", "_default_fan_layout (exact x/y)"),
             ("Thrust-to-weight", "2.45 (hover @ 41%)", "analysis/flight_thermal.py"),
             ("All-up mass", "120 kg", "rider ~80 + airframe ~40"),
-            ("Hover endurance", "~61 s / charge", "2600 Wh — a sprinter, pit doctrine"),
+            ("Battery sprint", "~61 s / charge", "2600 Wh alone — a sprinter"),
+            ("Match endurance", "~26 min (hybrid)", "series-hybrid: analysis/endurance_match.py"),
             ("Cooling margin", "8.1× waste heat", "lift air = coolant + heat pipes"),
-            ("Soft fence", "ceiling 18 m / floor 3 m", "fence_ceiling / fence_floor"),
+            ("Control input", "wave-to-fly (gesture)", "firmware/rider_input.py -> intent mapper"),
             ("Control core", "Cortex-M4F @ 400 Hz", "rust/nimbus_core + firmware/hal.py"),
         ],
-        note="Disc area is capped by what fits inside the bristle flare (the fan "
-             "does not protrude in any non-cutaway view), so it's a ~60 s sprinter — "
-             "hence the F1-style hot-swap pits the software already enforces. Fans "
-             "fully internal (prop exposure 0); the lift air doubles as motor coolant, "
-             "heat pipes spread the rest over the 2.4 m shaft. FLIGHT + THERMAL PASS.",
+        note="Disc area is capped by what fits inside the bristle flare (the fan never "
+             "protrudes), so battery-only it's a ~60 s sprinter. A slim in-shaft "
+             "SERIES-HYBRID genset burning SAF lifts that to a ~26 min match (the "
+             "battery becomes the peak buffer; full ~250 kW bursts kept). Fans internal, "
+             "lift air = coolant. And you fly it by WAVING it: handle pose -> RiderIntent "
+             "-> the existing intent mapper. FLIGHT + THERMAL + MATCH all PASS.",
     ),
     "snitch": dict(
         title="GOLDEN SNITCH", code="SNT",
