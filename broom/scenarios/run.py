@@ -36,9 +36,7 @@ def _mk(**kw) -> Simulator:
     return Simulator(backend=_BACKEND, **kw)
 
 
-# --------------------------------------------------------------------------- #
 # Reporting
-# --------------------------------------------------------------------------- #
 def report(name: str, blurb: str, sim: Simulator) -> None:
     rows = sim.log.rows
     print("\n" + "=" * 74)
@@ -82,15 +80,13 @@ def _launch(*extra):
     ])
 
 
-# --------------------------------------------------------------------------- #
 # Scenarios
-# --------------------------------------------------------------------------- #
 def scn_hover():
     sim = _mk(initial=_ground())
     script = _launch(Segment(8.0, intent=RiderIntent()))
     sim.run(18.0, lambda t, s: script(t))
     report("hover", "Arm, auto-takeoff, then let go of the sticks. The broom "
-                    "parks itself in the air.", sim)
+                    "holds position.", sim)
 
 
 def scn_joyride():
@@ -140,7 +136,7 @@ def scn_killswitch():
     sim = _mk(initial=_ground())
     script = _launch(
         Segment(8.0, intent=RiderIntent(pitch=0.5)),
-        Segment(13.0, cmd=Commands(kill=True)),   # the big red button
+        Segment(13.0, cmd=Commands(kill=True)),   # emergency-stop input
     )
     sim.run(28.0, lambda t, s: script(t))
     after = [r for r in sim.log.rows if r["t"] > 13.2]

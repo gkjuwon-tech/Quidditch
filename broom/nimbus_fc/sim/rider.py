@@ -2,7 +2,7 @@
 scenarios read like a flight plan instead of a wall of if-statements.
 
 A script is a list of (start_time, RiderIntent, Commands) segments; the active
-segment is the last one whose start_time <= t. Commands are edge-triggered, so
+segment is the last one whose start_time <= t. Commands are edge-triggereded, so
 a command only fires on the tick its segment becomes active.
 """
 

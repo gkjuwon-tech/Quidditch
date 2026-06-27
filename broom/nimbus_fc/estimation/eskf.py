@@ -53,7 +53,6 @@ class EKF:
         self.mag_std = 0.05         # magnetometer direction noise (yaw reference)
         self.mag_world = np.array([0.0, 0.96, -0.28])  # reference field (world ENU)
 
-    # ------------------------------------------------------------------ #
     @property
     def gyro_bias(self) -> np.ndarray:
         return self.bg.copy()
@@ -62,21 +61,20 @@ class EKF:
     def state(self) -> State:
         return State(self.pos.copy(), self.vel.copy(), self.q.copy(), np.zeros(3))
 
-    # ------------------------------------------------------------------ #
     def predict(self, gyro: np.ndarray, accel_body: np.ndarray, dt: float) -> None:
         R = m.quat_to_rotmat(self.q)
         a_b = accel_body - self.ba           # corrected specific force (body)
         w_b = gyro - self.bg                 # corrected angular rate (body)
         a_world = R @ a_b + np.array([0.0, 0.0, -m.GRAVITY])
 
-        # --- nominal propagation ---
+        # Nominal propagation
         self.pos = self.pos + self.vel * dt + 0.5 * a_world * dt * dt
         self.vel = self.vel + a_world * dt
         self.q = m.quat_mul(self.q, m.quat_from_rotvec(w_b * dt))
         self.q = m.quat_normalize(self.q)
         # biases are random-walk: nominal unchanged
 
-        # --- error-state transition F = I + A dt ---
+        # Error-state transition f = i + a dt
         Ra = R @ a_b
         F = np.eye(15)
         F[P_, V_] = _I3 * dt
@@ -84,7 +82,7 @@ class EKF:
         F[V_, BA_] = -R * dt
         F[TH_, BG_] = -R * dt
 
-        # --- process noise Q (discrete, diagonal-ish) ---
+        # Process noise q (discrete, diagonal-ish)
         Q = np.zeros((15, 15))
         Q[V_, V_] = (self.sigma_a * dt) ** 2 * _I3
         Q[TH_, TH_] = (self.sigma_g * dt) ** 2 * _I3
@@ -99,7 +97,6 @@ class EKF:
         # real EKF's accelerometer tilt aiding.
         self._fuse_accel_tilt(accel_body - self.ba)
 
-    # ------------------------------------------------------------------ #
     def _fuse_accel_tilt(self, a_b: np.ndarray) -> None:
         a_norm = float(np.linalg.norm(a_b))
         if a_norm < 1.0:
@@ -151,7 +148,6 @@ class EKF:
         self.P = IKH @ self.P @ IKH.T + K @ Rm @ K.T
         self.P = 0.5 * (self.P + self.P.T)
 
-    # ------------------------------------------------------------------ #
     def fuse_gnss(self, pos_meas: np.ndarray, vel_meas: np.ndarray, dt: float = 0.0) -> None:
         # Measurement: position + velocity (6-dim).
         H = np.zeros((6, 15))
@@ -166,14 +162,14 @@ class EKF:
         K = self.P @ H.T @ np.linalg.inv(S)
         dx = K @ y
 
-        # --- inject error into nominal ---
+        # Inject error into nominal
         self.pos += dx[P_]
         self.vel += dx[V_]
         self.q = m.quat_normalize(m.quat_mul(m.quat_from_rotvec(dx[TH_]), self.q))
         self.bg += dx[BG_]
         self.ba += dx[BA_]
 
-        # --- covariance update (Joseph form for symmetry/stability) ---
+        # Covariance update (joseph form for symmetry/stability)
         IKH = np.eye(15) - K @ H
         self.P = IKH @ self.P @ IKH.T + K @ Rm @ K.T
         self.P = 0.5 * (self.P + self.P.T)

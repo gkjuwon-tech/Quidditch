@@ -17,7 +17,6 @@ class TelemetryLog:
     def append(self, **kw) -> None:
         self.rows.append(kw)
 
-    # ------------------------------------------------------------------ #
     def to_csv(self, path: str) -> None:
         if not self.rows:
             return
@@ -31,7 +30,6 @@ class TelemetryLog:
     def column(self, key: str) -> list:
         return [r[key] for r in self.rows]
 
-    # ------------------------------------------------------------------ #
     def sparkline(self, key: str, width: int = 60) -> str:
         vals = self.column(key)
         if not vals:

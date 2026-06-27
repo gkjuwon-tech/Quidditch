@@ -1,4 +1,4 @@
-"""Synthetic sensor suite: turn ground-truth state into noisy measurements.
+"""Synthetic sensor suite: generate sensor measurements from truth state.
 
 So the estimator (and therefore the controller) never sees the truth directly
 -- exactly like the real vehicle. Models a 6-axis IMU (accel + gyro with bias

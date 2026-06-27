@@ -1,4 +1,4 @@
-"""The Dementor -- the central referee that sees everyone.
+"""The Dementor -- central match supervisor.
 
 It does two jobs the individual agents can't do for themselves:
 
@@ -39,7 +39,6 @@ class Dementor:
         self.world = world
         return self
 
-    # ------------------------------------------------------------------ #
     @staticmethod
     def _is_broom(agent) -> bool:
         return hasattr(agent, "rider_ai")
@@ -49,7 +48,7 @@ class Dementor:
         if not self._is_broom(agent):
             return None
         if self.killed:
-            return np.array([0.0, 0.0, -1.0])      # master kill: gentle descent
+            return np.array([0.0, 0.0, -1.0])      # master kill: controlled descent
 
         # base intent: serve a penalty (idle) or chase -- but deconfliction is
         # added either way, so penalised craft still never collide.
@@ -70,7 +69,6 @@ class Dementor:
                 v = v + n * ((thresh - dist) / self.margin) * agent.p.max_speed_xy
         return v
 
-    # ------------------------------------------------------------------ #
     def judge(self, world, dt: float) -> None:
         if self.game_over:
             return
@@ -98,7 +96,6 @@ class Dementor:
                 self.game_over = True
                 self._log(world, f"SNITCH CAUGHT  +{self.snitch_points}  -> GAME OVER")
 
-    # ------------------------------------------------------------------ #
     def kill(self, world) -> None:
         """Master emergency stop: everyone descends gently, match ends."""
         self.killed = True
@@ -113,7 +110,6 @@ class Dementor:
             "game_over": self.game_over,
         }
 
-    # ------------------------------------------------------------------ #
     def _player(self, world, pid):
         return next((pl for pl in world.players if getattr(pl, "id", None) == pid), None)
 

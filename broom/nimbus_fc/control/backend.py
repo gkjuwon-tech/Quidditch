@@ -8,7 +8,7 @@ Both backends expose the identical interface:
 `PyControlBackend` runs the pure-Python cascade (great for development and
 exactly what the rest of the package was built on). `RustControlBackend` calls
 the compiled `nimbus_core` cdylib through ctypes -- the same algorithm, but in
-a deterministic, GC-free, allocation-free hot path suitable for hard real time.
+a deterministic, GC-free, allocation-free control path suitable for hard real time.
 
 The whole point of the split: policy/safety logic (commander, geofence, intent)
 stays in expressive Python; the high-rate numeric loop that "if it stutters,
@@ -32,9 +32,7 @@ from .rate import RateController
 NUM_FANS = 8
 
 
-# --------------------------------------------------------------------------- #
 # Python backend
-# --------------------------------------------------------------------------- #
 class PyControlBackend:
     name = "python"
 
@@ -68,9 +66,7 @@ class PyControlBackend:
         return fan, self._collective, torque, actual
 
 
-# --------------------------------------------------------------------------- #
 # Rust backend (ctypes)
-# --------------------------------------------------------------------------- #
 class _FfiParams(ctypes.Structure):
     _fields_ = [
         ("dt", ctypes.c_double),
@@ -155,7 +151,6 @@ class RustControlBackend:
         self._state = (ctypes.c_double * 13)()
         self._sp = (ctypes.c_double * 8)()
 
-    # ------------------------------------------------------------------ #
     @staticmethod
     def _build_ffi_params(p: Params) -> _FfiParams:
         mix = Mixer(p)  # reuse the validated allocation + pseudo-inverse
@@ -224,7 +219,6 @@ class RustControlBackend:
             pass
 
 
-# --------------------------------------------------------------------------- #
 def make_backend(params: Params, backend: str = "python"):
     if backend == "python":
         return PyControlBackend(params)

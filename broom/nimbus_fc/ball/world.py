@@ -41,7 +41,6 @@ class World:
         self.score = 0
         self.referee = None          # optional Dementor; arbitrates + judges
 
-    # ------------------------------------------------------------------ #
     def add_player(self, player: Player, policy=None) -> Player:
         player.policy = policy
         self.players.append(player)
@@ -55,7 +54,6 @@ class World:
     def log_event(self, msg: str) -> None:
         self.events.append((self.t, msg))
 
-    # ------------------------------------------------------------------ #
     def step(self, dt: float) -> None:
         # players move first (they react to the previous tick's world).
         # An agent may be a kinematic Player or a real broom-flown BroomAgent;
@@ -79,7 +77,6 @@ class World:
         if self.referee is not None:
             self.referee.judge(self, dt)
 
-    # ------------------------------------------------------------------ #
     def _bound_velocity(self, pos: np.ndarray, vel_cmd: np.ndarray) -> np.ndarray:
         """Ramp outward velocity to zero near a wall (soft keep-in)."""
         out = vel_cmd.copy()
@@ -104,7 +101,6 @@ class World:
         for k in range(3):
             pl.pos[k] = float(np.clip(pl.pos[k], self.lo[k], self.hi[k]))
 
-    # ------------------------------------------------------------------ #
     def nearest_player(self, pos: np.ndarray):
         if not self.players:
             return None, np.inf

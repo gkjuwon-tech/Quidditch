@@ -1,4 +1,4 @@
-"""End-to-end safety behaviour: the properties that let a non-pilot survive."""
+"""End-to-end safety behaviour: the properties that let an untrained rider avoid loss of control."""
 
 import numpy as np
 
@@ -28,13 +28,13 @@ def test_neutral_sticks_hold_position():
 
 
 def test_geofence_keeps_vehicle_inside_pitch():
-    """Slam every stick to the wall; never leave the hard boundary -- including
+    """Command sustained full stick deflection; never leave the hard boundary -- including
     a long full-throttle climb to the high (150 m) Quidditch ceiling."""
     sim = Simulator()
     script = _arm_and_takeoff([
         Segment(8.0, intent=RiderIntent(lift=1.0)),               # climb to the ceiling
-        Segment(45.0, intent=RiderIntent(pitch=1.0, roll=1.0)),   # then slam the walls
-        Segment(58.0, intent=RiderIntent(pitch=-1.0, roll=-1.0)), # up high
+        Segment(45.0, intent=RiderIntent(pitch=1.0, roll=1.0)),   # then drive into the lateral boundaries
+        Segment(58.0, intent=RiderIntent(pitch=-1.0, roll=-1.0)), # still at altitude
     ])
     sim.run(75.0, lambda t, s: script(t))
     reached = max(r["z"] for r in sim.log.rows)
@@ -46,7 +46,7 @@ def test_geofence_keeps_vehicle_inside_pitch():
 
 
 def test_kill_switch_is_a_gentle_descent_not_a_drop():
-    """The big red button must NOT free-fall a manned vehicle."""
+    """The emergency stop must NOT free-fall a manned vehicle."""
     sim = Simulator(initial=State(pos=np.array([0.0, 0.0, 0.0])))
     script = _arm_and_takeoff([
         Segment(8.0, intent=RiderIntent()),

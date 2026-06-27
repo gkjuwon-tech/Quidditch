@@ -30,7 +30,7 @@ class Commands:
     """Edge-triggered pilot/ground commands for this tick."""
     arm: bool = False
     takeoff: bool = False
-    kill: bool = False        # the big red button (-> gentle emergency descent)
+    kill: bool = False        # emergency-stop input (-> gentle emergency descent)
     disarm: bool = False
 
 
@@ -51,19 +51,18 @@ class Commander:
     def is_manual(self) -> bool:
         return self.state == CommanderState.FLYING
 
-    # ------------------------------------------------------------------ #
     def update(self, state: State, soc: float, link_ok: bool,
                cmd: Commands, dt: float) -> Setpoint | None:
         """Advance the state machine. Returns a nav Setpoint, or None for manual."""
         notes: list[str] = []
         action, msg = self.failsafe.evaluate(soc, link_ok, dt)
 
-        # --- highest priority: the kill switch --------------------------
+        # Highest priority: the kill switch
         if cmd.kill and self.motors_armed and self.state != CommanderState.EMERGENCY_DESCENT:
             self._enter(CommanderState.EMERGENCY_DESCENT, state, notes,
                         "KILL: emergency controlled descent")
 
-        # --- failsafes (override rider, from any flying state) ----------
+        # Failsafes (override rider, from any flying state)
         elif self._airborne():
             if action == FailsafeAction.LAND_NOW and self.state != CommanderState.LANDING:
                 self._enter(CommanderState.LANDING, state, notes, msg)
@@ -71,7 +70,7 @@ class Commander:
                   and self.state not in (CommanderState.RETURN_TO_PIT, CommanderState.LANDING)):
                 self._enter(CommanderState.RETURN_TO_PIT, state, notes, msg)
 
-        # --- normal lifecycle commands ----------------------------------
+        # Normal lifecycle commands
         if self.state == CommanderState.DISARMED and cmd.arm:
             self._enter(CommanderState.ARMED, state, notes, "armed")
         elif self.state == CommanderState.ARMED:
@@ -84,7 +83,6 @@ class Commander:
         self.notes = tuple(notes)
         return sp
 
-    # ------------------------------------------------------------------ #
     def _run_state(self, state: State, notes: list[str]) -> Setpoint | None:
         p = self.p
         s = self.state
@@ -135,7 +133,6 @@ class Commander:
 
         return None
 
-    # ------------------------------------------------------------------ #
     def _enter(self, new: CommanderState, state: State, notes: list[str], msg: str) -> None:
         self._hold_xy = state.pos[:2].copy()
         self._hold_yaw = m.yaw_of(state.quat)

@@ -21,7 +21,7 @@ def chase_ball(ball, lead: float = 0.3, gain: float = 1.2):
 
 def patrol(center, radius: float = 16.0, height: float = 9.0,
            omega: float = 0.4, gain: float = 1.0):
-    """Fly a steady circuit (a chaser milling about the pitch)."""
+    """Fly a steady circuit around the pitch."""
     c = np.asarray(center, float)
 
     def ai(world, me):
