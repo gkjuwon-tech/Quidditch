@@ -1,9 +1,10 @@
 """Flight-controller-backed player used by match simulations.
 
 The agent presents the same small interface as a kinematic Player, but its
-position comes from the 6-DOF broom plant and FlightController. A policy supplies
-desired world velocity; `intent_for_velocity` maps that request back into stick
-inputs."""
+position comes from the 6-DOF broom plant and FlightController. a policy
+supplies a desired world velocity; `intent_for_velocity` maps that request back
+into stick inputs.
+"""
 
 from __future__ import annotations
 
@@ -21,7 +22,7 @@ from ..sim.sensors import SensorSuite
 
 def intent_for_velocity(state: State, v_des: np.ndarray, p: Params,
                         face_travel: bool = False) -> RiderIntent:
-    """Inverse of the intent mapper: desired WORLD velocity -> stick intent."""
+    """inverse of the intent mapper: desired WORLD velocity -> stick intent."""
     yaw = m.yaw_of(state.quat)
     c, s = np.cos(yaw), np.sin(yaw)
     vx, vy, vz = v_des
@@ -67,13 +68,13 @@ class BroomAgent:
             self.sensors = self.est = None
 
     def _spawn_flying(self) -> None:
-        """Pre-spin the rotors to hover and hand control straight to the rider."""
+        """pre-spin the rotors to hover and hand control straight to the rider."""
         self.dyn.fan_thrust[:] = self.p.hover_thrust / self.p.num_fans
         self.fc.commander.state = CommanderState.FLYING
         self.fc.mapper.reset(self.dyn.state)
         self.fc._was_manual = True
 
-    # Player-compatible surface.
+    # player-compatible surface
     @property
     def pos(self) -> np.ndarray:
         return self.dyn.state.pos
@@ -89,7 +90,7 @@ class BroomAgent:
 
     def act(self, world, dt: float, vel_override: np.ndarray | None = None) -> None:
         if vel_override is not None:
-            # The referee has already folded penalties and separation into this velocity.
+            # the referee has already folded penalties and separation into this vel
             v_des = np.asarray(vel_override, float)
         elif self.tagged_out and world.t < self._penalty_until:
             v_des = np.array([0.0, 0.0, -0.3])   # penalised: descend at idle power
@@ -101,7 +102,8 @@ class BroomAgent:
         intent = intent_for_velocity(self.dyn.state, v_des, self.p)
 
         if self.state_source == "estimate":
-            # Keep gyro fresh for the rate loop; run the full EKF at the configured decimation.
+            # keep gyro fresh for the rate loop; run the full EKF at the
+            # configured decimation
             gyro, accel = self.sensors.imu(self.dyn.state, self.dyn.accel_world)
             self._imu_accum.append((gyro, accel))
             est = self.est.state

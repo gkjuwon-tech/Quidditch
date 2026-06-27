@@ -1,4 +1,5 @@
-//! Cascaded control core, kept in parity with nimbus_fc.control.{pid,position,attitude,rate,mixer}.
+//! Cascaded control core, kept in parity with
+//! nimbus_fc.control.{pid,position,attitude,rate,mixer}.
 //! Fixed-size, allocation-free control path. NUM_FANS pinned at 8.
 
 use crate::math::*;
@@ -41,7 +42,7 @@ impl<const N: usize> Pid<N> {
     }
 }
 
-/// Plain-old-data parameters (filled from the FFI struct in lib.rs).
+/// plain-old-data parameters (filled from the FFI struct in lib.rs).
 #[derive(Clone)]
 pub struct CoreParams {
     pub dt: f64,
@@ -83,7 +84,7 @@ pub struct Controller {
     yaw_rate_ff: f64,
 }
 
-/// One control tick's output.
+/// one control tick's output
 pub struct Out {
     pub fan: [f64; NUM_FANS],
     pub collective: f64,
@@ -123,14 +124,14 @@ impl Controller {
         let quat = [state[6], state[7], state[8], state[9]];
         let omega = [state[10], state[11], state[12]];
 
-        // Outer loop (position) at reduced rate
+        // outer loop (position) at reduced rate
         if self.tick % (p.pos_loop_div as u64) == 0 {
             let dt_pos = p.dt * p.pos_loop_div as f64;
             self.position(&pos, &vel, &quat, sp, dt_pos);
         }
         self.tick += 1;
 
-        // Attitude: quat error -> rate setpoint
+        // attitude: quat error -> rate setpoint
         let err = quat_error_angle_axis(quat, self.q_des);
         let mut rate_sp = [
             self.p.kp_att_rp * err[0],
@@ -142,10 +143,10 @@ impl Controller {
             rate_sp[i] = clip(rate_sp[i], -rl[i], rl[i]);
         }
 
-        // Rate: pid -> torque
+        // rate: pid -> torque
         let torque = self.rate_pid.update(rate_sp, omega, self.p.dt);
 
-        // Mixer
+        // mixer
         self.allocate(self.collective, torque)
     }
 
@@ -239,7 +240,7 @@ impl Controller {
         f
     }
 
-    /// Prioritize torque over collective under saturation (matches Mixer._desaturate).
+    /// prioritize torque over collective under saturation (matches Mixer._desaturate)
     fn desaturate(&self, wrench: &[f64; 4]) -> [f64; NUM_FANS] {
         let p = &self.p;
         let tw = [0.0, wrench[1], wrench[2], wrench[3]];

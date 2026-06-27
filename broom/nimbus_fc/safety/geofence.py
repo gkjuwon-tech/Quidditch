@@ -1,21 +1,21 @@
-"""3D geofence: pitch keep-in volume and boundary handling.
+"""3D geofence: pitch keep-in volume + boundary handling.
 
-Acts at the setpoint level (clean separation from the controller). The pitch is
-an axis-aligned box, so the fence works per world axis, which makes it both
-simple and bulletproof:
+Acts at the setpoint level (clean separation from the controller). the pitch is
+an axis-aligned box, so the fence works per world axis -- simple and
+bulletproof:
 
-  * Any position-hold target is clamped into the keep-in box.
-  * For each axis, we predict where the vehicle would COAST to a stop using the
-    same brake-accel the position controller can deliver. If that stop point
-    lies outside the box, we replace the rider's velocity command on that axis
-    with a position-hold at the boundary. The position controller's
+  * any position-hold target is clamped into the keep-in box.
+  * for each axis, predict where the vehicle would COAST to a stop using the
+    same brake-accel the position controller can deliver. if that stop point
+    lies outside the box, replace the rider's velocity command on that axis
+    with a position-hold at the boundary. the position controller's
     stopping-distance profile (proven to brake within budget) then does the
     work -- and because the held target is *inside* the wall, any residual
-    overshoot is actively pulled back. The broom physically cannot park
-    outside the box.
+    overshoot is actively pulled back. the broom physically cannot park outside
+    the box.
 
-Per-axis action preserves tangential motion: you can still skim along a wall.
-Modeled on ArduPilot's fence, specialized to a rectangular pitch.
+per-axis action preserves tangential motion: you can still skim along a wall.
+modeled on ArduPilot's fence, specialized to a rectangular pitch.
 """
 
 from __future__ import annotations
@@ -31,25 +31,25 @@ class Geofence:
         self.p = params
         self.keep_in = keep_in
         poly = params.fence_polygon
-        # Axis-aligned keep-in box from the pitch bounding box, shrunk by keep_in.
+        # axis-aligned keep-in box from the pitch bbox, shrunk by keep_in
         self.lo = np.array([poly[:, 0].min() + keep_in, poly[:, 1].min() + keep_in,
                             params.fence_floor])
         self.hi = np.array([poly[:, 0].max() - keep_in, poly[:, 1].max() - keep_in,
                             params.fence_ceiling])
-        # Conservative brake accel for stop prediction (starts braking early).
+        # conservative brake accel for stop prediction (brake early)
         self.a_brake = 0.5 * params.max_accel_xy
 
     def apply(self, state: State, sp: Setpoint,
               allow_ground: bool = False) -> tuple[Setpoint, bool]:
         pos, vel = state.pos, state.vel
         breaching = False
-        # During landing / emergency descent the in-flight floor must yield so
-        # the vehicle can actually reach the ground.
+        # during landing / emergency descent the in-flight floor has to yield so
+        # the vehicle can actually reach the ground
         lo = self.lo.copy()
         if allow_ground:
             lo[2] = 0.0
 
-        # Clamp any explicit position-hold target into the keep-in box.
+        # clamp any explicit position-hold target into the keep-in box
         if sp.pos is not None:
             for k in range(3):
                 if np.isfinite(sp.pos[k]):
@@ -69,11 +69,11 @@ class Geofence:
 
     @staticmethod
     def _hold_axis(sp: Setpoint, k: int, bound: float, outward_sign: float) -> None:
-        """Replace this axis with a position-hold at the boundary; kill outward vel."""
+        """replace this axis with a position-hold at the boundary; kill outward vel."""
         if sp.pos is None:
             sp.pos = np.array([np.nan, np.nan, np.nan])
         sp.pos[k] = bound
-        # Allow inward velocity feedforward, never outward.
+        # allow inward velocity feedforward, never outward
         if outward_sign > 0:
             sp.vel_ff[k] = min(sp.vel_ff[k], 0.0)
         else:

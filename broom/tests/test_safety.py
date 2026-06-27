@@ -1,4 +1,6 @@
-"""End-to-end safety behaviour: the properties that let an untrained rider avoid loss of control."""
+"""end-to-end safety behaviour: the properties that let an untrained rider avoid
+loss of control.
+"""
 
 import numpy as np
 
@@ -17,7 +19,7 @@ def _arm_and_takeoff(extra):
 
 
 def test_neutral_sticks_hold_position():
-    """Let go of the controls -> the broom parks in the air."""
+    """let go of the controls -> the broom parks in the air."""
     sim = Simulator(initial=State(pos=np.array([0.0, 0.0, 0.0])))
     script = _arm_and_takeoff([Segment(8.0, intent=RiderIntent())])
     sim.run(20.0, lambda t, s: script(t))
@@ -28,12 +30,12 @@ def test_neutral_sticks_hold_position():
 
 
 def test_geofence_keeps_vehicle_inside_pitch():
-    """Command sustained full stick deflection; never leave the hard boundary -- including
-    a long full-throttle climb to the high (150 m) Quidditch ceiling."""
+    """command sustained full stick deflection; never leave the hard boundary --
+    including a long full-throttle climb to the high (150 m) Quidditch ceiling."""
     sim = Simulator()
     script = _arm_and_takeoff([
         Segment(8.0, intent=RiderIntent(lift=1.0)),               # climb to the ceiling
-        Segment(45.0, intent=RiderIntent(pitch=1.0, roll=1.0)),   # then drive into the lateral boundaries
+        Segment(45.0, intent=RiderIntent(pitch=1.0, roll=1.0)),   # then drive into the lateral walls
         Segment(58.0, intent=RiderIntent(pitch=-1.0, roll=-1.0)), # still at altitude
     ])
     sim.run(75.0, lambda t, s: script(t))
@@ -46,7 +48,7 @@ def test_geofence_keeps_vehicle_inside_pitch():
 
 
 def test_kill_switch_is_a_gentle_descent_not_a_drop():
-    """The emergency stop must NOT free-fall a manned vehicle."""
+    """the emergency stop must NOT free-fall a manned vehicle."""
     sim = Simulator(initial=State(pos=np.array([0.0, 0.0, 0.0])))
     script = _arm_and_takeoff([
         Segment(8.0, intent=RiderIntent()),
@@ -61,7 +63,7 @@ def test_kill_switch_is_a_gentle_descent_not_a_drop():
 
 
 def test_battery_failsafe_returns_to_pit_and_lands():
-    """Low battery seizes control, flies home, lands, disarms."""
+    """low battery seizes control, flies home, lands, disarms."""
     sim = Simulator(initial=State(pos=np.array([20.0, 10.0, 0.0])),
                     initial_soc=0.28)  # below RTP threshold
     script = _arm_and_takeoff([Segment(8.0, intent=RiderIntent(pitch=0.5))])

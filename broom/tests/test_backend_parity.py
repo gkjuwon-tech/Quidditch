@@ -1,7 +1,7 @@
-"""The Rust core must reproduce the Python reference, tick for tick.
+"""the Rust core must reproduce the Python reference, tick for tick.
 
 A polyglot safety core is only trustworthy if the compiled path is provably the
-same behaviour as the readable reference. We fly identical scenarios on both
+same behaviour as the readable reference. we fly identical scenarios on both
 backends and require the trajectories to match to floating-point noise.
 
 Skipped automatically if the Rust cdylib hasn't been built.
@@ -44,7 +44,7 @@ def test_rust_matches_python_trajectory():
 
 
 def test_rust_geofence_containment():
-    """Safety property must hold identically on the Rust core."""
+    """the safety property must hold identically on the Rust core."""
     sim = Simulator(initial=State(pos=np.array([0.0, 0.0, 0.0])), backend="rust")
     script = RiderScript([
         Segment(0.0, cmd=Commands(arm=True)),

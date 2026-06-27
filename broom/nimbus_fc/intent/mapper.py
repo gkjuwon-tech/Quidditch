@@ -2,17 +2,17 @@
 
 The contract that makes the broom "impossible to crash by being bad at flying":
 
-  * Sticks centered  -> latch and HOLD current position + altitude + heading.
-                        Let go and the broom just parks in the air.
-  * Stick deflected  -> command a VELOCITY (capped to the envelope), not a
-                        raw tilt. Push twice as hard, you do not go twice as
+  * sticks centered  -> latch and HOLD current position + altitude + heading.
+                        let go and the broom parks in the air.
+  * stick deflected  -> command a VELOCITY (capped to the envelope), not a raw
+                        tilt. push twice as hard and you don't go twice as
                         crazy -- you ask for at most max_speed.
-  * Heading          -> yaw stick commands a yaw RATE; release holds heading.
+  * heading          -> yaw stick commands a yaw RATE; release holds heading.
 
-Position hold is encoded per-axis: a NaN in the setpoint position means
-"velocity mode on that axis", so the rider can hold a lateral spot while
-climbing. POSITION mode holds laterally on release; ALTITUDE mode lets the
-vehicle coast horizontally (and only holds height) for a looser, windier feel.
+position hold is per-axis: a NaN in the setpoint position means "velocity mode
+on that axis", so the rider can hold a lateral spot while climbing. POSITION
+mode holds laterally on release; ALTITUDE mode lets the vehicle coast
+horizontally (only holds height) for a looser, windier feel.
 """
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ class IntentMapper:
         self.hold_yaw: float | None = None
 
     def reset(self, state: State) -> None:
-        """Latch holds to the current state (call when handing control to the rider)."""
+        """latch holds to the current state (call when handing control to the rider)."""
         self.hold_xy = state.pos[:2].copy()
         self.hold_z = float(state.pos[2])
         self.hold_yaw = m.yaw_of(state.quat)
@@ -46,18 +46,18 @@ class IntentMapper:
         if self.hold_yaw is None:
             self.reset(state)
 
-        # Heading: yaw stick -> yaw rate, release holds heading
+        # heading: yaw stick -> yaw rate, release holds heading
         yaw_rate = intent.yaw * p.max_yaw_rate
         self.hold_yaw = _wrap(self.hold_yaw + yaw_rate * dt)
 
         pos = np.array([np.nan, np.nan, np.nan])
         vel_ff = np.zeros(3)
 
-        # Horizontal
+        # horizontal
         if abs(intent.pitch) > _DEADBAND or abs(intent.roll) > _DEADBAND:
-            # Velocity mode: rider frame -> world via current heading.
-            fwd = intent.pitch * p.max_speed_xy        # +x_body
-            right = intent.roll * p.max_speed_xy        # +right = -y_body
+            # velocity mode: rider frame -> world via current heading
+            fwd = intent.pitch * p.max_speed_xy       # +x_body
+            right = intent.roll * p.max_speed_xy       # +right = -y_body
             yaw = m.yaw_of(state.quat)
             c, s = np.cos(yaw), np.sin(yaw)
             vel_ff[0] = c * fwd + s * right
@@ -71,7 +71,7 @@ class IntentMapper:
         else:  # ALTITUDE mode: no lateral hold, coast to a stop on drag
             self.hold_xy = None
 
-        # Vertical
+        # vertical
         if abs(intent.lift) > _DEADBAND:
             rate = (intent.lift * p.max_climb_rate if intent.lift > 0
                     else intent.lift * p.max_descent_rate)
@@ -87,5 +87,5 @@ class IntentMapper:
 
 
 def _wrap(a: float) -> float:
-    """Wrap angle to [-pi, pi]."""
+    """wrap angle to [-pi, pi]."""
     return float((a + np.pi) % (2 * np.pi) - np.pi)

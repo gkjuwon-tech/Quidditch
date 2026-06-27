@@ -1,5 +1,6 @@
-"""Estimator-in-the-loop test: the controller flies on the noisy estimate
-(synthetic IMU + GNSS), never the truth, and must still reach the target."""
+"""estimator-in-the-loop test: the controller flies on the noisy estimate
+(synthetic IMU + GNSS), never the truth, and must still reach the target.
+"""
 
 import numpy as np
 
@@ -16,7 +17,7 @@ from nimbus_fc.sim.sensors import SensorSuite
 
 
 def _fly_on_estimate(seed: int):
-    """Fly a step maneuver using ONLY the estimate; return (target_err, max_att_err_deg)."""
+    """fly a step maneuver using ONLY the estimate; return (target_err, max_att_err_deg)."""
     p = Params()
     init = State(pos=np.array([0.0, 0.0, 5.0]))
     d = Dynamics(p, init)
@@ -47,21 +48,21 @@ def _fly_on_estimate(seed: int):
 
 
 def test_fly_on_estimate_stays_bounded_all_seeds():
-    """Flying on the noisy estimate must always remain controlled and settle
-    near the target. The complementary filter is not as crisp as truth-state
+    """flying on the noisy estimate must always remain controlled and settle
+    near the target. the complementary filter isn't as crisp as truth-state
     SITL (a few metres of settling spread under worst-case noise is expected),
     but it never loses control."""
     for seed in range(8):
         target_err, max_att = _fly_on_estimate(seed)
         assert target_err < 5.0, f"seed {seed}: lost the target ({target_err:.2f} m)"
-        # Transient attitude-estimate error during hard accel can be large on a
-        # complementary filter (an EKF would do better) -- but it must stay
+        # transient attitude-estimate error during hard accel can be large on a
+        # complementary filter (an EKF would do better) -- but it has to stay
         # bounded and recover; steady-state tightness is checked separately.
         assert max_att < 35.0, f"seed {seed}: attitude estimate diverged ({max_att:.1f} deg)"
 
 
 def test_attitude_estimate_steady_state_is_tight():
-    """At hover the estimate should lock on within a couple of degrees."""
+    """at hover the estimate should lock on within a couple of degrees."""
     p = Params()
     init = State(pos=np.array([0.0, 0.0, 5.0]))
     d = Dynamics(p, init)

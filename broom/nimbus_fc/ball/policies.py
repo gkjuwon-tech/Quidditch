@@ -6,7 +6,7 @@ import numpy as np
 
 
 def seek_ball(ball, lead: float = 0.25):
-    """Lead-pursuit: chase a ball, aiming where it will be, at full speed."""
+    """lead-pursuit: chase a ball, aiming where it will be, at full speed."""
     def policy(world, pl):
         target = ball.body.pos + ball.body.vel * lead
         d = target - pl.pos

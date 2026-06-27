@@ -1,18 +1,18 @@
 """Swappable control backends for the inner cascade.
 
-Both backends expose the identical interface:
+Both backends expose the same interface:
 
     control(state, setpoint, dt) -> (fan_thrusts, collective, torque_cmd, torque_actual)
     reset()
 
-`PyControlBackend` runs the pure-Python cascade (great for development and
-exactly what the rest of the package was built on). `RustControlBackend` calls
-the compiled `nimbus_core` cdylib through ctypes -- the same algorithm, but in
-a deterministic, GC-free, allocation-free control path suitable for hard real time.
+`PyControlBackend` runs the pure-Python cascade (development; what the rest of
+the package was built on). `RustControlBackend` drives the compiled
+`nimbus_core` cdylib through ctypes -- same algorithm, but in a deterministic,
+GC-free, allocation-free control path for hard real time.
 
-The whole point of the split: policy/safety logic (commander, geofence, intent)
-stays in expressive Python; the high-rate numeric loop that "if it stutters,
-someone falls" runs in Rust.
+The split is deliberate: policy/safety logic (commander, geofence, intent) stays
+in expressive Python; the high-rate numeric loop where "if it stutters, someone
+falls" runs in Rust.
 """
 
 from __future__ import annotations
@@ -32,7 +32,6 @@ from .rate import RateController
 NUM_FANS = 8
 
 
-# Python backend
 class PyControlBackend:
     name = "python"
 
@@ -66,7 +65,8 @@ class PyControlBackend:
         return fan, self._collective, torque, actual
 
 
-# Rust backend (ctypes)
+# --- rust backend (ctypes) ------------------------------------------------------
+
 class _FfiParams(ctypes.Structure):
     _fields_ = [
         ("dt", ctypes.c_double),
@@ -181,8 +181,8 @@ class RustControlBackend:
         fp.rate_ki[:] = list(map(float, p.ki_rate))
         fp.rate_kd[:] = list(map(float, p.kd_rate))
         fp.rate_ilim[:] = list(map(float, p.rate_i_limit))
-        fp.a[:] = list(map(float, mix.A.flatten()))          # 4x8 row-major
-        fp.apinv[:] = list(map(float, mix.A_pinv.flatten()))  # 8x4 row-major
+        fp.a[:] = list(map(float, mix.A.flatten()))           # 4x8 row-major
+        fp.apinv[:] = list(map(float, mix.A_pinv.flatten()))   # 8x4 row-major
         return fp
 
     def reset(self) -> None:

@@ -1,9 +1,9 @@
-"""Failsafe evaluation: battery and datalink -> requested safe action.
+"""Failsafe evaluation: battery + datalink -> requested safe action.
 
 Pure policy, no state machine here -- the commander owns transitions and just
-asks this what the current hazards demand. Battery thresholds mirror
+asks this what the current hazards demand. battery thresholds follow
 ArduPilot's two-stage low/critical scheme; link loss uses a debounce timer so
-a single dropped packet doesn't trigger a return-to-pit.
+one dropped packet doesn't trigger a return-to-pit.
 """
 
 from __future__ import annotations

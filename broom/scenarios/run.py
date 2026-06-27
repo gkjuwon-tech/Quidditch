@@ -7,7 +7,7 @@
 
 Each scenario flies the full flight-control + safety stack against the 6-DOF
 plant and prints a terminal report (state timeline + ASCII telemetry). CSVs
-are written to scenarios/out/ for plotting (see tools/plot.py).
+land in scenarios/out/ for plotting (see tools/plot.py).
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from __future__ import annotations
 import os
 import sys
 
-# Make `nimbus_fc` importable when run straight from the repo.
+# make `nimbus_fc` importable when run straight from the repo
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import numpy as np  # noqa: E402
@@ -28,7 +28,7 @@ from nimbus_fc.sim.wind import Wind  # noqa: E402
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "out")
 
-# Control backend for all scenarios: "python" (default) or "rust". Set by CLI.
+# control backend for all scenarios: "python" (default) or "rust". set by CLI.
 _BACKEND = "python"
 
 
@@ -36,7 +36,8 @@ def _mk(**kw) -> Simulator:
     return Simulator(backend=_BACKEND, **kw)
 
 
-# Reporting
+# --- reporting -----------------------------------------------------------------
+
 def report(name: str, blurb: str, sim: Simulator) -> None:
     rows = sim.log.rows
     print("\n" + "=" * 74)
@@ -44,7 +45,7 @@ def report(name: str, blurb: str, sim: Simulator) -> None:
     print(f"  {blurb}")
     print("=" * 74)
 
-    # State-transition timeline
+    # state-transition timeline
     print("  flight log:")
     last = None
     for r in rows:
@@ -57,7 +58,7 @@ def report(name: str, blurb: str, sim: Simulator) -> None:
     print(f"  final: {f['state']} at ({f['x']:.1f},{f['y']:.1f},{f['z']:.1f}) m, "
           f"battery {f['soc']:.0f}%")
 
-    # Telemetry sparklines
+    # telemetry sparklines
     print("  telemetry:")
     for line in sim.log.summary(["z", "speed", "pitch", "soc"]).splitlines():
         print("    " + line)
@@ -80,7 +81,8 @@ def _launch(*extra):
     ])
 
 
-# Scenarios
+# --- scenarios -----------------------------------------------------------------
+
 def scn_hover():
     sim = _mk(initial=_ground())
     script = _launch(Segment(8.0, intent=RiderIntent()))
@@ -91,7 +93,7 @@ def scn_hover():
 
 def scn_joyride():
     sim = _mk(initial=_ground())
-    # Fly a rough rectangle using only stick deflections, then release to hold.
+    # fly a rough rectangle on stick deflections only, then release to hold
     script = _launch(
         Segment(7.0, intent=RiderIntent(pitch=0.7)),
         Segment(12.0, intent=RiderIntent(roll=0.7)),
@@ -125,7 +127,7 @@ def scn_geofence():
 
 def scn_battery():
     sim = _mk(initial=_ground(20.0, 10.0), initial_soc=0.33)
-    # Fly away from the pit; battery crosses the RTP threshold mid-flight.
+    # fly away from the pit; battery crosses the RTP threshold mid-flight
     script = _launch(Segment(7.0, intent=RiderIntent(pitch=0.6, roll=-0.3)))
     sim.run(70.0, lambda t, s: script(t))
     report("battery", "Battery sags below the Return-To-Pit threshold mid-joyride. "

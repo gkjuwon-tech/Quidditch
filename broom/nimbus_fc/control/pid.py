@@ -1,12 +1,10 @@
-"""Vector PID with anti-windup and derivative-on-measurement.
+"""Vector PID: anti-windup + derivative-on-measurement.
 
-Design notes (benchmarked against Betaflight's rate PID and PX4's control
-library):
-  - Derivative is taken on the *measurement*, not the error, to avoid
-    "derivative kick" when the setpoint steps.
-  - Integral uses clamping anti-windup, and is frozen when the output is
-    saturated (back-calculation handled by the caller via `freeze_i`).
-  - Operates element-wise on numpy arrays so one class covers 1- and 3-axis.
+- derivative taken on the measurement, not the error, so a setpoint step
+  doesn't kick the D term.
+- integral uses clamping anti-windup; the caller freezes it (`freeze_i`) when
+  the output is saturated (back-calc is handled upstream).
+- operates element-wise on ndarrays so one class covers 1- and 3-axis loops.
 """
 
 from __future__ import annotations
@@ -22,8 +20,8 @@ class PID:
         self.i_limit = np.atleast_1d(np.asarray(i_limit, dtype=float))
         self.out_limit = (None if out_limit is None
                           else np.atleast_1d(np.asarray(out_limit, dtype=float)))
-        # Integral is sized lazily to the signal width on first update, so the
-        # same class works with scalar gains over a 2-vector (xy) or 3-vector.
+        # integral / prev-measurement sized lazily on first update, so the same
+        # class works for scalar gains over a 2-vector (xy) or a 3-vector.
         self._i = None
         self._prev_meas = None
 

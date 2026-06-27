@@ -1,10 +1,10 @@
-"""Quaffle: the gentle scoring ball. Hover, get caught, get carried, get thrown.
+"""Quaffle: the gentle scoring ball. hover, get caught, get carried, get thrown.
 
 The opposite of the Bludger -- it must be easy and safe to handle:
   FREE   -> holds a soft hover and sinks slowly; a player's hand within
             catch_radius catches it.
-  HELD   -> rides just ahead of its holder, matching their motion. After a
-            short carry it is thrown at the nearest hoop.
+  HELD   -> rides just ahead of its holder, matching their motion. after a
+            short carry it's thrown at the nearest hoop.
   THROWN -> flies to the aimed hoop with a gentle homing "assist" (forgiving
             aim, tunable per league), and scores when it passes through.
 

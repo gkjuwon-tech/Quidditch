@@ -5,7 +5,7 @@ the ball's acceleration and speed envelope -- a faithful stand-in for a small
 agile drone whose inner loop (the broom cascade) realises the demanded accel.
 
 `Player` is a kinematic human-on-a-broom: a position, a velocity, a top speed,
-and a `reach` (how far a hand/bat extends). Players are what the balls must
+and a `reach` (how far a hand/bat extends). players are what the balls must
 never physically touch.
 """
 
@@ -63,7 +63,7 @@ class Player:
         self.pos = self.pos + self.vel * dt
 
     def act(self, world, dt: float, vel_override=None) -> None:
-        """Uniform per-tick update used by the World (kinematic player)."""
+        """uniform per-tick update used by the World (kinematic player)."""
         if self.tagged_out and world.t < self._penalty_until:
             self.step(np.array([0.0, 0.0, -0.3]), dt)   # penalised: idle drift
             return
@@ -77,7 +77,7 @@ class Player:
         self.step(vel_cmd, dt)
 
     def hand_toward(self, target: np.ndarray) -> np.ndarray:
-        """Position of the outstretched hand reaching toward `target`."""
+        """position of the outstretched hand reaching toward `target`."""
         d = np.asarray(target, dtype=float) - self.pos
         n = float(np.linalg.norm(d))
         if n < 1e-6:

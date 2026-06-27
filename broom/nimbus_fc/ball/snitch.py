@@ -1,9 +1,10 @@
 """Golden Snitch evasion behavior.
 
 The snitch flees predicted hand positions, adds a tangential feint near the
-closest threat, and keeps a small boundary repulsion term so it cannot be pinned
-against the pitch limits. Capture requires a hand to remain inside the capture
-radius for the configured dwell time."""
+closest threat, and keeps a small boundary repulsion term so it can't be pinned
+against the pitch limits. capture needs a hand to stay inside the capture
+radius for the configured dwell time.
+"""
 
 from __future__ import annotations
 
@@ -37,7 +38,7 @@ class SnitchEvasion:
         threat_dir = np.zeros(3)
 
         for pl in world.players:
-            # Predict the hand position, not just the player center.
+            # predict the hand position, not just the player center
             t_pred = 0.18
             p_future = pl.pos + pl.vel * t_pred
             to_snitch = pos - p_future
@@ -53,7 +54,7 @@ class SnitchEvasion:
                 w = (self.danger - d) / self.danger
                 flee += (d_vec / max(d, 1e-6)) * (w * w) * self.p.max_speed
 
-            # Capture is based on the current hand position.
+            # capture is based on the current hand position
             hand_now = pl.hand_toward(pos)
             if float(np.linalg.norm(pos - hand_now)) < self.capture_radius:
                 self._dwell += dt
@@ -66,13 +67,13 @@ class SnitchEvasion:
         else:
             self._dwell = max(0.0, self._dwell - dt)  # decay if no hand close
 
-        # Add a side-step near the closest threat; flip sign to avoid a fixed orbit.
+        # add a side-step near the closest threat; flip sign to avoid a fixed orbit
         if nearest_d < self.danger:
             tang = np.cross(threat_dir, np.array([0.0, 0.0, 1.0]))
             tn = float(np.linalg.norm(tang))
             if tn > 1e-6:
                 tang /= tn
-                # Prefer the side-step that keeps the ball away from the wall.
+                # prefer the side-step that keeps the ball away from the wall
                 to_center = -pos.copy()
                 to_center[2] = 0.0
                 if np.dot(tang, to_center) < 0:
@@ -81,7 +82,7 @@ class SnitchEvasion:
                 w = (self.danger - nearest_d) / self.danger
                 flee += tang * sign * self.juke_gain * w * self.p.max_speed
 
-        # If horizontal escape is blocked, spend the maneuver vertically.
+        # if horizontal escape is blocked, spend the maneuver vertically
         if nearest_d < 1.5 and np.linalg.norm(flee[:2]) < 0.4 * self.p.max_speed:
             up = world.hi[2] - pos[2]
             down = pos[2] - world.lo[2]
@@ -89,7 +90,7 @@ class SnitchEvasion:
 
         flee += self._wall_repulsion(world, pos)
 
-        # With no pressure, keep a slow drift instead of parking in place.
+        # with no pressure, keep a slow drift instead of parking in place
         if nearest_d >= self.danger and np.linalg.norm(flee) < 1e-3:
             flee = 0.5 * self.p.max_speed * np.array([
                 np.cos(0.4 * self.t), np.sin(0.3 * self.t), 0.2 * np.sin(0.5 * self.t)])

@@ -1,13 +1,13 @@
 """The unbreakable rule: a ball never drives into a person.
 
-This is the single most important safety layer in the whole ball stack. It sits
-between every ball's guidance and its motion, and it is identical for the gentle
+This is the single most important safety layer in the whole ball stack. it sits
+between every ball's guidance and its motion, and it's identical for the gentle
 Quaffle and the aggressive Bludger: guidance may *want* to get close, but the
 ball's commanded velocity is clamped so its padded shell decelerates to a stop
 at the safety distance from any person -- the same stopping-distance profile
 that holds the broom inside the pitch, here applied to people.
 
-If a person rams the ball anyway, the ball actively retreats. The Bludger's
+If a person rams the ball anyway, the ball actively retreats. the Bludger's
 "hit" is therefore a proximity tag at ~1 m, never a 0 m collision: the physics
 of contact is removed and only the *judgement* of a hit remains.
 """
@@ -38,10 +38,10 @@ class NoContactAvoidance:
                 continue
             n = d_vec / dist                       # unit vector AWAY from person
             gap = dist - min_sep
-            # Gap closes at: player's approach speed minus the ball's outward
-            # speed. Keep that below the stopping-distance limit, accounting for
+            # gap closes at: player's approach speed minus the ball's outward
+            # speed. keep that below the stopping-distance limit, accounting for
             # the PERSON's motion (so a charging player triggers a pre-emptive
-            # retreat, not a too-late reaction). The ball is faster, so it wins.
+            # retreat, not a too-late reaction). the ball is faster, so it wins.
             v_allow = np.sqrt(2.0 * a_brake * max(gap, 0.0))
             player_approach = float(np.dot(pl.vel, n))   # >0: moving toward ball
             needed_out = player_approach - v_allow       # required ball outward vel
@@ -54,7 +54,7 @@ class NoContactAvoidance:
 
     @staticmethod
     def min_separation(body: BallBody, players: list[Player]) -> float:
-        """Current shell-to-body clearance to the nearest person (negative = touch)."""
+        """current shell-to-body clearance to the nearest person (neg = touch)."""
         if not players:
             return np.inf
         return min(
@@ -64,8 +64,8 @@ class NoContactAvoidance:
 
     @staticmethod
     def closing_speed(body: BallBody, players: list[Player]) -> float:
-        """Relative speed along the line to the nearest person (impact speed if
-        they were touching). Low closing speed => a graze is gentle by design."""
+        """relative speed along the line to the nearest person (impact speed if
+        they were touching). low closing speed => a graze is gentle by design."""
         if not players:
             return 0.0
         pl = min(players, key=lambda p: float(np.linalg.norm(body.pos - p.pos)))

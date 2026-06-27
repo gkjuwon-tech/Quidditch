@@ -2,11 +2,11 @@
 
 A ball is, at the guidance level, an acceleration- and speed-limited flying
 agent: the inner attitude/thrust loop that realises a commanded acceleration is
-the broom's proven control cascade (nimbus_fc.control). Here we model each ball
-as a 2nd-order agent and focus on the part that is genuinely new -- autonomous
+the broom's proven control cascade (nimbus_fc.control). here we model each ball
+as a 2nd-order agent and focus on the part that's genuinely new -- autonomous
 guidance, evasion, pursuit, and the no-contact safety guarantee.
 
-Every length is metres, speed m/s, accel m/s^2.
+lengths in metres, speed m/s, accel m/s^2.
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ class BallParams:
 
 
 def quaffle() -> BallParams:
-    # Big, gentle, easy to catch. Hovers and drifts; never threatening.
+    # big, gentle, easy to catch. hovers and drifts; never threatening.
     return BallParams(
         name="quaffle", radius=0.18, mass=0.5,
         max_speed=7.0, max_accel=6.0, vel_tau=0.18, safety_radius=0.20,
@@ -40,7 +40,7 @@ def quaffle() -> BallParams:
 
 
 def bludger() -> BallParams:
-    # Fast and aggressive, but its "hit" is a proximity tag, not a collision.
+    # fast and aggressive, but its "hit" is a proximity tag, not a collision.
     return BallParams(
         name="bludger", radius=0.15, mass=1.2,
         max_speed=15.0, max_accel=22.0, vel_tau=0.07, safety_radius=0.45,
@@ -52,7 +52,7 @@ def bludger() -> BallParams:
 
 
 def snitch() -> BallParams:
-    # Tiny, absurdly agile, exists to not be caught.
+    # tiny, absurdly agile, exists to not be caught.
     return BallParams(
         name="snitch", radius=0.04, mass=0.05,
         max_speed=19.0, max_accel=32.0, vel_tau=0.04, safety_radius=0.25,

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Benchmark the control core: Python backend vs Rust backend.
 
-What matters for a manned flight controller is not average speed, it is
-WORST-CASE latency and jitter. At 400 Hz the inner loop has a 2500 us budget
-per tick; blow it (e.g. a GC pause) and the loop destabilizes. We measure the
+What matters for a manned flight controller isn't average speed, it's
+WORST-CASE latency and jitter. at 400 Hz the inner loop has a 2500 us budget
+per tick; blow it (e.g. a GC pause) and the loop destabilizes. we measure the
 per-tick latency distribution for both backends and count deadline misses.
 
     python tools/bench.py [n_iters]
@@ -28,7 +28,8 @@ BUDGET_US = 1e6 / RT_RATE_HZ  # 2500 us per tick
 
 
 def _representative_state() -> State:
-    # A typical in-flight state: tilted, moving, off-target (exercises full cascade).
+    # a typical in-flight state: tilted, moving, off-target (exercises the
+    # full cascade)
     return State(
         pos=np.array([3.0, -2.0, 6.0]),
         vel=np.array([4.0, 1.0, -0.5]),

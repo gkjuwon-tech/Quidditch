@@ -2,8 +2,8 @@
 
 Crude but honest: electrical power = mechanical power / efficiency, where
 mechanical power scales with thrust^1.5 (momentum theory, P ~ T*v_induced and
-v_induced ~ sqrt(T)). Good enough to make "Return To Pit" a real consequence
-of flying hard, which is the whole point for the demo.
+v_induced ~ sqrt(T)). good enough to make "Return To Pit" a real consequence of
+flying hard, which is the whole point for the demo.
 """
 
 from __future__ import annotations
@@ -16,14 +16,14 @@ class Battery:
     def __init__(self, params: Params, initial_soc: float = 1.0):
         self.p = params
         self.energy_wh = params.batt_capacity_wh * initial_soc
-        # Calibrate the power constant so that hovering hits the rated efficiency.
-        hover_T = params.hover_thrust
-        # P_hover_electrical (W) implied by batt_hover_eta at hover thrust:
-        # treat hover induced power as T * sqrt(T / (2*rho*A)); fold all the
+        # calibrate the power constant so hovering hits the rated efficiency.
+        # P_hover_electrical implied by batt_hover_eta at hover thrust: treat
+        # hover induced power as T*sqrt(T/(2*rho*A)); fold all the
         # disc-area/rho constants into one k calibrated at hover.
+        hover_T = params.hover_thrust
         p_mech_hover = hover_T ** 1.5
         self._k = (hover_T * 9.0) / (params.batt_hover_eta * p_mech_hover)
-        # (the 9.0 sets a ~ few-minute endurance scale for a 2.6 kWh pack)
+        # (the 9.0 sets a ~few-minute endurance scale for a 2.6 kWh pack)
 
     @property
     def soc(self) -> float:

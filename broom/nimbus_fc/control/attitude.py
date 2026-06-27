@@ -1,9 +1,9 @@
 """Attitude loop: desired orientation -> body-rate setpoint.
 
-Quaternion P-controller (PX4 style). The attitude error is expressed as a
-rotation vector in the body frame; we scale it by per-axis P gains to get the
-rate setpoint, then add any yaw-rate feedforward from the rider. Rate
-setpoints are clamped so the inner loop never receives an insane demand.
+Quaternion P-controller, PX4-style. The attitude error comes out as a
+body-frame rotation vector; scale it by per-axis P gains to get the rate
+setpoint, add any yaw-rate feedforward, then clamp so the inner loop never
+sees a ridiculous demand.
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ class AttitudeController:
 
     def update(self, q_cur: np.ndarray, q_des: np.ndarray,
                yaw_rate_ff: float = 0.0) -> np.ndarray:
-        err = m.quat_error_angle_axis(q_cur, q_des)   # body-frame rotation vector
+        err = m.quat_error_angle_axis(q_cur, q_des)  # body-frame rotation vector
         rate_sp = self.kp * err
         rate_sp[2] += yaw_rate_ff
         return np.clip(rate_sp, -self.rate_limit, self.rate_limit)

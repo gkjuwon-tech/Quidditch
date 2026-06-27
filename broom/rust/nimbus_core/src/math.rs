@@ -9,8 +9,8 @@ pub type V3 = [f64; 3];
 pub type Quat = [f64; 4];
 
 // f64 transcendentals via libm so the core builds on no_std targets too
-// (std's f64 methods aren't available without std). Used everywhere for
-// identical behaviour host vs embedded.
+// (std's f64 methods aren't available without std). used everywhere so host
+// vs embedded behave identically.
 #[inline] pub(crate) fn sqrt(x: f64) -> f64 { libm::sqrt(x) }
 #[inline] pub(crate) fn sin(x: f64) -> f64 { libm::sin(x) }
 #[inline] pub(crate) fn cos(x: f64) -> f64 { libm::cos(x) }
@@ -46,7 +46,7 @@ pub fn normalize3(v: V3, fallback: V3) -> V3 {
     }
 }
 
-/// Scale v so |v| <= max_norm (direction preserved).
+/// scale v so |v| <= max_norm (direction preserved)
 #[inline]
 pub fn clamp_norm(v: &mut [f64], max_norm: f64) {
     let mut s = 0.0;
@@ -79,7 +79,7 @@ pub fn quat_conj(q: Quat) -> Quat {
     [q[0], -q[1], -q[2], -q[3]]
 }
 
-/// Rotate body-frame vector into world: q (x) [0,v] (x) q^-1.
+/// rotate body-frame vector into world: q (x) [0,v] (x) q^-1
 pub fn quat_rotate(q: Quat, v: V3) -> V3 {
     let qv = [0.0, v[0], v[1], v[2]];
     let r = quat_mul(quat_mul(q, qv), quat_conj(q));
@@ -95,7 +95,7 @@ pub fn quat_normalize(q: Quat) -> Quat {
     [q[0] * s, q[1] * s, q[2] * s, q[3] * s]
 }
 
-/// Small-signal attitude error as a body-frame rotation vector (~2*vec(q_err)).
+/// small-signal attitude error as a body-frame rotation vector (~2*vec(q_err))
 pub fn quat_error_angle_axis(q_cur: Quat, q_des: Quat) -> V3 {
     let mut qe = quat_mul(quat_conj(q_cur), q_des);
     if qe[0] < 0.0 {
@@ -104,7 +104,7 @@ pub fn quat_error_angle_axis(q_cur: Quat, q_des: Quat) -> V3 {
     [2.0 * qe[1], 2.0 * qe[2], 2.0 * qe[3]]
 }
 
-/// Yaw (ZYX) extracted from quaternion.
+/// yaw (ZYX) extracted from quaternion
 pub fn yaw_of(q: Quat) -> f64 {
     let (w, x, y, z) = (q[0], q[1], q[2], q[3]);
     let siny_cosp = 2.0 * (w * z + x * y);
@@ -112,14 +112,14 @@ pub fn yaw_of(q: Quat) -> f64 {
     atan2(siny_cosp, cosy_cosp)
 }
 
-/// Build body->world quaternion with body-z along `zb_dir`, given yaw.
-/// Matches PositionController._attitude_from_thrust + rotmat_to_quat.
+/// build body->world quaternion with body-z along `zb_dir`, given yaw.
+/// matches PositionController._attitude_from_thrust + rotmat_to_quat.
 pub fn attitude_from_thrust(thrust_vec: V3, yaw: f64) -> Quat {
     let zb = normalize3(thrust_vec, [0.0, 0.0, 1.0]);
     let xc = [cos(yaw), sin(yaw), 0.0];
     let yb = normalize3(cross3(zb, xc), [0.0, 1.0, 0.0]);
     let xb = cross3(yb, zb);
-    // Columns of R are xb, yb, zb (body axes in world).
+    // columns of R are xb, yb, zb (body axes in world)
     rotmat_to_quat([
         [xb[0], yb[0], zb[0]],
         [xb[1], yb[1], zb[1]],
@@ -127,7 +127,7 @@ pub fn attitude_from_thrust(thrust_vec: V3, yaw: f64) -> Quat {
     ])
 }
 
-/// Rotation matrix -> quaternion (Shepperd's method), matching math3d.rotmat_to_quat.
+/// rotation matrix -> quaternion (Shepperd's method), matching math3d.rotmat_to_quat
 pub fn rotmat_to_quat(r: [[f64; 3]; 3]) -> Quat {
     let tr = r[0][0] + r[1][1] + r[2][2];
     let q = if tr > 0.0 {

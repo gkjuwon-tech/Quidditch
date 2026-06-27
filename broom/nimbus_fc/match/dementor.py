@@ -2,17 +2,17 @@
 
 It does two jobs the individual agents can't do for themselves:
 
-  1. DECONFLICTION. Broom-flown players have no inter-broom avoidance of their
-     own (each only knows its geofence and the balls avoid people). The
+  1. DECONFLICTION. broom-flown players have no inter-broom avoidance of their
+     own (each only knows its geofence, and the balls avoid people). the
      Dementor adds a symmetric separation push between brooms so two players
      diving for the same snitch never collide.
 
-  2. JUDGEMENT. It owns the rulebook and the scoreboard: a Bludger tag sends a
+  2. JUDGEMENT. it owns the rulebook and the scoreboard: a Bludger tag sends a
      player off for a penalty; a Quaffle through a hoop scores; catching the
-     Snitch is +150 and ends the match. A master kill makes everyone descend.
+     Snitch is +150 and ends the match. a master kill makes everyone descend.
 
-It is named after the thing in the books that watches everything and ends
-games -- which is exactly what a central safety/scoring server does.
+Named after the thing in the books that watches everything and ends games --
+which is exactly what a central safety/scoring server does.
 """
 
 from __future__ import annotations
@@ -44,14 +44,14 @@ class Dementor:
         return hasattr(agent, "rider_ai")
 
     def override_for(self, world, agent):
-        """Deconflicted velocity for a broom-flown player (None for kinematic)."""
+        """deconflicted velocity for a broom-flown player (None for kinematic)."""
         if not self._is_broom(agent):
             return None
         if self.killed:
             return np.array([0.0, 0.0, -1.0])      # master kill: controlled descent
 
         # base intent: serve a penalty (idle) or chase -- but deconfliction is
-        # added either way, so penalised craft still never collide.
+        # added either way, so penalised craft still never collide
         if getattr(agent, "tagged_out", False) and world.t < agent._penalty_until:
             v = np.array([0.0, 0.0, -0.3])
         else:
@@ -97,7 +97,7 @@ class Dementor:
                 self._log(world, f"SNITCH CAUGHT  +{self.snitch_points}  -> GAME OVER")
 
     def kill(self, world) -> None:
-        """Master emergency stop: everyone descends gently, match ends."""
+        """master emergency stop: everyone descends gently, match ends."""
         self.killed = True
         self.game_over = True
         self._log(world, "MASTER KILL -- all craft to controlled descent")

@@ -1,9 +1,9 @@
 """Wind & turbulence model.
 
-Steady wind plus band-limited gusts (an Ornstein-Uhlenbeck process per axis,
-the cheap cousin of the Dryden turbulence spectrum). The plant applies drag to
-AIRSPEED (vel - wind), so wind is a real force disturbance the controller must
-reject -- which is exactly what stresses position hold and the estimator.
+Steady wind plus band-limited gusts (an Ornstein-Uhlenbeck process per axis --
+the cheap cousin of the Dryden turbulence spectrum). the plant applies drag to
+AIRSPEED (vel - wind), so wind is a real force disturbance the controller has to
+reject -- exactly what stresses position hold and the estimator.
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ class Wind:
 
     def sample(self, dt: float) -> np.ndarray:
         if self.gust_sigma > 0.0:
-            # OU update: mean-reverting, stationary std = gust_sigma.
+            # OU update: mean-reverting, stationary std = gust_sigma
             a = dt / max(self.gust_tau, 1e-3)
             noise = self.rng.normal(0.0, 1.0, 3)
             self._gust += -a * self._gust + self.gust_sigma * np.sqrt(2.0 * a) * noise

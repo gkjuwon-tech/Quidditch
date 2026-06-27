@@ -1,7 +1,7 @@
-"""Error-state EKF: tight attitude, and robust closed-loop estimation through wind.
+"""error-state EKF: tight attitude, and robust closed-loop estimation through wind.
 
 These assert the properties that matter, with generous bounds so they pass
-across noise seeds. The headline (EKF ~2 deg / ~5 cm in gusting wind vs the
+across noise seeds. the headline (EKF ~2 deg / ~5 cm in gusting wind vs the
 complementary filter diverging) is demonstrated in scenarios/run.py.
 """
 
@@ -55,8 +55,8 @@ def test_fly_on_estimate_through_wind_stays_controlled():
 
 
 def test_ekf_beats_complementary_attitude_in_wind():
-    """The EKF's attitude estimate should be much tighter than the
-    complementary filter under the same gusty conditions."""
+    """the EKF's attitude estimate should be much tighter than the complementary
+    filter under the same gusty conditions."""
     def final_att_err(estimator):
         wind = Wind(steady=(6.0, -3.0, 0.0), gust_sigma=1.5, gust_tau=1.5, seed=5)
         sim = Simulator(initial=State(pos=np.array([0.0, 0.0, 0.0])),

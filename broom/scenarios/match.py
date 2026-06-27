@@ -7,7 +7,7 @@
     python scenarios/match.py all
 
 The players here are NOT scripted points -- each is a 6-DOF broom flown by the
-full flight stack (commander + geofence + fly-by-intent + control cascade). The
+full flight stack (commander + geofence + fly-by-intent + control cascade). the
 Dementor keeps brooms from colliding and owns the rulebook. dt = 2.5 ms (400 Hz).
 """
 
@@ -31,8 +31,8 @@ from nimbus_fc.match.dementor import Dementor  # noqa: E402
 from nimbus_fc.match.policies import chase_ball, guard_hoops, patrol  # noqa: E402
 
 DT = 0.0025
-# When True, every broom flies on its own onboard EKF (noisy IMU+GNSS+mag)
-# instead of truth state. Set by --ekf. EKF runs decimated to 100 Hz.
+# when True, every broom flies on its own onboard EKF (noisy IMU+GNSS+mag)
+# instead of truth state. set by --ekf. EKF runs decimated to 100 Hz.
 _EKF = False
 
 
@@ -41,7 +41,7 @@ def _src():
 
 
 def _match_snitch():
-    """A snitch with a match-length fatigue handicap so the game can end."""
+    """a snitch with a match-length fatigue handicap so the game can end."""
     sp = params.snitch()
     sp.extra["fatigue_tau"] = 25.0
     sp.extra["fatigue_floor"] = 0.40

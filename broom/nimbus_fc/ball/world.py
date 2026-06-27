@@ -2,9 +2,9 @@
 
 The World owns the pitch bounds, steps every agent, runs each ball's guidance
 (behaviour) through the shared no-contact avoidance layer, and records events
-(captures, tags, scores) and telemetry. It is the closest thing here to the
-fictional central referee -- it sees everyone and enforces the safety rule that
-a ball never physically touches a person.
+(captures, tags, scores) and telemetry. closest thing here to the fictional
+central referee -- it sees everyone and enforces the safety rule that a ball
+never physically touches a person.
 """
 
 from __future__ import annotations
@@ -36,7 +36,7 @@ class World:
         self.avoid = NoContactAvoidance()
         self.t = 0.0
         self.events: list[tuple[float, str]] = []
-        # Scoring hoops: list of (center[3], ring_radius). Set by the scenario.
+        # scoring hoops: list of (center[3], ring_radius). set by the scenario.
         self.hoops: list[tuple[np.ndarray, float]] = []
         self.score = 0
         self.referee = None          # optional Dementor; arbitrates + judges
@@ -56,7 +56,7 @@ class World:
 
     def step(self, dt: float) -> None:
         # players move first (they react to the previous tick's world).
-        # An agent may be a kinematic Player or a real broom-flown BroomAgent;
+        # an agent may be a kinematic Player or a real broom-flown BroomAgent;
         # both expose .act(world, dt).
         for pl in self.players:
             override = self.referee.override_for(self, pl) if self.referee else None
@@ -78,7 +78,7 @@ class World:
             self.referee.judge(self, dt)
 
     def _bound_velocity(self, pos: np.ndarray, vel_cmd: np.ndarray) -> np.ndarray:
-        """Ramp outward velocity to zero near a wall (soft keep-in)."""
+        """ramp outward velocity to zero near a wall (soft keep-in)."""
         out = vel_cmd.copy()
         margin = 2.0
         for k in range(3):

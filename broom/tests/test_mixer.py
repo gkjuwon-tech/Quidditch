@@ -1,4 +1,4 @@
-"""Allocation / mixer tests."""
+"""allocation / mixer tests."""
 
 import numpy as np
 
@@ -28,7 +28,7 @@ def test_wrench_roundtrip_in_range():
 def test_saturation_preserves_torque_over_collective():
     p = Params()
     mix = Mixer(p)
-    # Demand impossible collective; torque must still be honored.
+    # demand impossible collective; torque must still be honored
     huge = p.fan_thrust_max * p.num_fans * 2.0
     torque = np.array([0.0, 40.0, 0.0])
     f, actual = mix.allocate(huge, torque)

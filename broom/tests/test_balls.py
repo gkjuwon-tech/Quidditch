@@ -1,4 +1,4 @@
-"""Ball behaviours + the no-contact safety invariant."""
+"""ball behaviours + the no-contact safety invariant."""
 
 import numpy as np
 
@@ -17,9 +17,9 @@ def _hoops():
 
 
 def test_ball_never_drives_into_a_person():
-    """A ball commanded straight at a person stops at its safety shell and never
-    touches them -- the core no-contact guarantee. (A person ramming the ball is
-    their own doing; the padded shell is there for exactly that.)"""
+    """a ball commanded straight at a person stops at its safety shell and
+    never touches them -- the core no-contact guarantee. (a person ramming the
+    ball is their own doing; the padded shell is there for exactly that.)"""
     class Seek:
         def __init__(self, t): self.t = np.array(t, float)
         def update(self, world, ball, dt): return (self.t - ball.body.pos) * 3.0
@@ -95,7 +95,7 @@ def test_quaffle_can_be_caught_and_scored():
 
 
 def test_match_safety_invariant_holds():
-    """All three balls + four players: no ball ever physically touches anyone."""
+    """all three balls + four players: no ball ever physically touches anyone."""
     w = World()
     w.hoops = _hoops()
     for i in range(4):

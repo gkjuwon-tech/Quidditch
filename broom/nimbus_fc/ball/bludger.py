@@ -1,18 +1,18 @@
 """Bludger: aggressive pursuit whose "hit" is a proximity tag, not a collision.
 
-The original is a cast-iron ball that cracks skulls. Ours threatens exactly as
+The original is a cast-iron ball that cracks skulls. ours threatens exactly as
 hard, and hurts exactly nobody:
 
   HUNT    -> pick a target (nearest eligible player) and fly a lead-pursuit
              intercept toward where they'll be.
   TAG     -> on reaching tag_radius (~1 m) it registers a HIT in software and
-             immediately backs off. Because tag_radius is *outside* the
+             immediately backs off. because tag_radius is *outside* the
              no-contact safety floor, the shell never has to reach the person.
   RETREAT -> peel away for a cooldown so it never lingers/collides, then HUNT.
 
-A bat swing inside bat_radius deflects it (it "gets hit back"). The
-no-contact avoidance layer underneath makes the contact-free property a hard
-guarantee, not a hope.
+A bat swing inside bat_radius deflects it (it "gets hit back"). the no-contact
+avoidance layer underneath makes the contact-free property a hard guarantee, not
+a hope.
 """
 
 from __future__ import annotations
@@ -70,17 +70,17 @@ class BludgerPursuit:
             self._begin_retreat(world, body, target.pos, "tagged")
             return self._retreat_dir * self.p.max_speed
 
-        # Lead-pursuit intercept, but the lead fades as we close in so the
-        # endgame is a direct homing onto the player (not a chase of the
-        # tangent point, which just tails a turning target forever).
+        # lead-pursuit intercept, but the lead fades as we close in so the
+        # endgame is direct homing onto the player (not a chase of the tangent
+        # point, which just tails a turning target forever)
         lead = self.lead_gain * min(1.0, d / 8.0)
         aim = target.pos + target.vel * lead
         v = aim - body.pos
         n = float(np.linalg.norm(v))
         if n <= 1e-6:
             return np.zeros(3)
-        # Decelerate into the tag so it arrives slow and taps (no high-speed
-        # overshoot through the safety floor). Darts in fast from range, eases
+        # decelerate into the tag so it arrives slow and taps (no high-speed
+        # overshoot through the safety floor). darts in fast from range, eases
         # in for the last metre.
         speed = min(self.p.max_speed, max(10.0, 8.0 * (d - self.tag_radius)))
         return v / n * speed

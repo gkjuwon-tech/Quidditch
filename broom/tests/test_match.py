@@ -1,4 +1,4 @@
-"""The capstone: flight-controller-backed players + the Dementor referee."""
+"""the capstone: flight-controller-backed players + the Dementor referee."""
 
 import numpy as np
 
@@ -21,7 +21,7 @@ def _match_snitch():
 
 
 def test_broom_agent_flies_stably_to_a_target():
-    """A player flown by the full FC stack reaches its goal without flipping."""
+    """a player flown by the full FC stack reaches its goal without flipping."""
     class W:
         t = 0.0
     w = W()

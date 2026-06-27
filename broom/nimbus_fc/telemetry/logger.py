@@ -1,4 +1,4 @@
-"""Telemetry: collect per-tick records, dump CSV, and render terminal summaries.
+"""Telemetry: collect per-tick records, dump CSV, render terminal summaries.
 
 No plotting dependency required -- a tiny ASCII sparkline keeps the demo
 legible over SSH. matplotlib (if installed) is used by tools/plot.py instead.

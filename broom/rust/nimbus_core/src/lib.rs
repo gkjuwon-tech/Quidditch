@@ -2,13 +2,13 @@
 //!
 //! Layout note: every FFI scalar is f64 (no mixed-width fields) so the structs
 //! have trivial, predictable layout that a Python ctypes.Structure mirrors
-//! exactly -- no unexpected padding across the boundary.
+//! exactly -- no surprise padding across the boundary.
 //!
 //! Builds two ways:
 //!   * default (feature "std"): cdylib with heap-based create/destroy, used by
 //!     the Python ctypes host backend.
-//!   * --no-default-features: #![no_std] for bare-metal flight MCUs. Use the
-//!     placement-init API (nc_size + nc_init) so there's no heap on the target.
+//!   * --no-default-features: #![no_std] for bare-metal flight MCUs. use the
+//!     placement-init API (nc_size + nc_init) so there's no heap on target.
 #![cfg_attr(not(feature = "std"), no_std)]
 
 mod control;
@@ -114,8 +114,8 @@ impl From<&FfiParams> for CoreParams {
     }
 }
 
-/// Create a controller on the heap. Returns an opaque handle; free with
-/// `nc_destroy`. Host-only (needs std/alloc); embedded uses `nc_init`.
+/// Create a controller on the heap. returns an opaque handle; free with
+/// `nc_destroy`. host-only (needs std/alloc); embedded uses `nc_init`.
 ///
 /// # Safety
 /// `params` must point to a valid `FfiParams`.
@@ -129,7 +129,7 @@ pub unsafe extern "C" fn nc_create(params: *const FfiParams) -> *mut Controller 
     Box::into_raw(Box::new(Controller::new(cp)))
 }
 
-/// Free a heap controller. Host-only.
+/// Free a heap controller. host-only.
 ///
 /// # Safety
 /// `ctrl` must come from `nc_create` and not be used afterwards.
@@ -141,20 +141,20 @@ pub unsafe extern "C" fn nc_destroy(ctrl: *mut Controller) {
     }
 }
 
-// No-alloc placement API (works on bare metal; no heap required)
-/// Size in bytes of a `Controller`, so firmware can reserve static storage.
+// no-alloc placement API (works on bare metal; no heap required)
+/// size in bytes of a `Controller`, so firmware can reserve static storage
 #[no_mangle]
 pub extern "C" fn nc_size() -> usize {
     core::mem::size_of::<Controller>()
 }
 
-/// Required alignment of `Controller`.
+/// required alignment of `Controller`
 #[no_mangle]
 pub extern "C" fn nc_align() -> usize {
     core::mem::align_of::<Controller>()
 }
 
-/// Initialize a controller into caller-provided storage (no heap).
+/// initialize a controller into caller-provided storage (no heap).
 ///
 /// # Safety
 /// `slot` must point to writable memory of at least `nc_size()` bytes with
@@ -177,10 +177,10 @@ pub unsafe extern "C" fn nc_reset(ctrl: *mut Controller) {
     }
 }
 
-/// Run one control tick. `state` has 13 f64, `sp` has 8 f64, `out` is written.
+/// run one control tick. `state` has 13 f64, `sp` has 8 f64, `out` is written.
 ///
 /// # Safety
-/// All pointers must be valid and correctly sized; `ctrl` from `nc_create`.
+/// all pointers must be valid and correctly sized; `ctrl` from `nc_create`.
 #[no_mangle]
 pub unsafe extern "C" fn nc_control(
     ctrl: *mut Controller,

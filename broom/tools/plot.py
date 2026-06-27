@@ -4,7 +4,7 @@
     python tools/plot.py scenarios/out/battery.csv [--save out.png]
 
 Renders the ground track, altitude, speed, attitude and battery so a scenario
-reads as a picture. Falls back to a clear message if matplotlib isn't present.
+reads as a picture. falls back to a clear message if matplotlib isn't present.
 """
 
 from __future__ import annotations

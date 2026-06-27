@@ -1,10 +1,11 @@
 """Flight controller composition for the NIMBUS broom.
 
-The commander owns lifecycle and failsafe decisions. Manual flight is translated
-through the intent mapper, then the geofence clamps the resulting setpoint before
-the position/attitude/rate cascade allocates fan thrust. Integrators are reset at
-control-authority boundaries so a manual hold does not bias autonomous return or
-landing."""
+The commander owns lifecycle + failsafe decisions. manual flight is translated
+through the intent mapper, then the geofence clamps the resulting setpoint
+before the position/attitude/rate cascade allocates fan thrust. integrators are
+reset at control-authority boundaries so a manual hold doesn't bias autonomous
+return or landing.
+"""
 
 from __future__ import annotations
 
@@ -31,8 +32,8 @@ class FlightController:
                  backend: str = "python"):
         self.p = params or Params()
         self.mode = mode
-        # Inner cascade (position->attitude->rate->mixer) is a swappable backend:
-        # "python" for development, "rust" for the real-time core.
+        # inner cascade (position->attitude->rate->mixer) is a swappable
+        # backend: "python" for dev, "rust" for the real-time core.
         self.core = make_backend(self.p, backend)
         self.mapper = IntentMapper(self.p)
         self.geofence = Geofence(self.p)
@@ -44,19 +45,20 @@ class FlightController:
         p = self.p
         notes: list[str] = []
 
-        # Commander returns a navigation setpoint when it owns the aircraft.
+        # commander returns a nav setpoint when it owns the aircraft
         nav_sp = self.commander.update(state, soc, link_ok, cmd, dt)
         notes.extend(self.commander.notes)
 
-        # Reset only on authority changes. Steady manual-flight integrator state is
-        # left intact until the commander takes over for navigation or failsafe work.
+        # reset only on authority changes. steady manual-flight integrator
+        # state is left intact until the commander takes over for nav or
+        # failsafe work.
         if self.commander.is_manual and not self._was_manual:
             self.mapper.reset(state)
         elif not self.commander.is_manual and self._was_manual:
             self.core.reset()
         self._was_manual = self.commander.is_manual
 
-        # Disarmed means no latent controller state and no thrust.
+        # disarmed => no latent controller state and no thrust
         if not self.commander.motors_armed:
             self.core.reset()
             zeros = np.zeros(p.num_fans)
@@ -64,20 +66,20 @@ class FlightController:
                             self.mode, self.commander.state,
                             Setpoint(), tuple(notes))
 
-        # Manual flight uses stick intent; nav states use the commander setpoint.
+        # manual flight uses stick intent; nav states use the commander setpoint
         if self.commander.is_manual:
             sp = self.mapper.update(intent, state, dt, self.mode)
         else:
             sp = nav_sp if nav_sp is not None else Setpoint(pos=state.pos.copy())
 
-        # Apply the geofence last so it protects both rider and autonomous setpoints.
+        # apply the geofence last so it protects both rider and autonomous sps
         allow_ground = self.commander.state in (
             CommanderState.LANDING, CommanderState.EMERGENCY_DESCENT)
         sp, breaching = self.geofence.apply(state, sp, allow_ground=allow_ground)
         if breaching:
             notes.append("geofence: pushing back from boundary")
 
-        # Inner cascade returns per-fan thrust commands.
+        # inner cascade returns per-fan thrust commands
         fan, collective, torque, actual = self.core.control(state, sp, dt)
 
         return FcOutput(fan, collective, torque, actual,
