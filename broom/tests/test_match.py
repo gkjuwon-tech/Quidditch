@@ -1,4 +1,4 @@
-"""The capstone: real broom-flown players + the Dementor referee."""
+"""The capstone: flight-controller-backed players + the Dementor referee."""
 
 import numpy as np
 

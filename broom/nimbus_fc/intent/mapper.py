@@ -39,7 +39,6 @@ class IntentMapper:
         self.hold_z = float(state.pos[2])
         self.hold_yaw = m.yaw_of(state.quat)
 
-    # ------------------------------------------------------------------ #
     def update(self, intent: RiderIntent, state: State, dt: float,
                mode: FlightMode = FlightMode.POSITION) -> Setpoint:
         p = self.p
@@ -47,14 +46,14 @@ class IntentMapper:
         if self.hold_yaw is None:
             self.reset(state)
 
-        # --- heading: yaw stick -> yaw rate, release holds heading ------
+        # Heading: yaw stick -> yaw rate, release holds heading
         yaw_rate = intent.yaw * p.max_yaw_rate
         self.hold_yaw = _wrap(self.hold_yaw + yaw_rate * dt)
 
         pos = np.array([np.nan, np.nan, np.nan])
         vel_ff = np.zeros(3)
 
-        # --- horizontal -------------------------------------------------
+        # Horizontal
         if abs(intent.pitch) > _DEADBAND or abs(intent.roll) > _DEADBAND:
             # Velocity mode: rider frame -> world via current heading.
             fwd = intent.pitch * p.max_speed_xy        # +x_body
@@ -72,7 +71,7 @@ class IntentMapper:
         else:  # ALTITUDE mode: no lateral hold, coast to a stop on drag
             self.hold_xy = None
 
-        # --- vertical ---------------------------------------------------
+        # Vertical
         if abs(intent.lift) > _DEADBAND:
             rate = (intent.lift * p.max_climb_rate if intent.lift > 0
                     else intent.lift * p.max_descent_rate)

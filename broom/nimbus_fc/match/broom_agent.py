@@ -1,16 +1,9 @@
-"""A player flown by the real broom stack.
+"""Flight-controller-backed player used by match simulations.
 
-`BroomAgent` is a Player whose position is NOT scripted -- it comes from the
-6-DOF broom plant driven by the full FlightController (commander + geofence +
-fly-by-intent + the control cascade). A rider-AI turns a desired world velocity
-into normalized stick intent (the inverse of the intent mapper), so a chase
-goal flows: goal -> desired velocity -> RiderIntent -> FlightController ->
-fan thrusts -> Dynamics -> new position.
-
-It exposes the same surface the balls expect from a person (pos, vel, reach,
-hand_toward, body_radius, id), so the no-contact ball avoidance and catch logic
-work unchanged. Optionally flies on the onboard EKF (state_source="estimate").
-"""
+The agent presents the same small interface as a kinematic Player, but its
+position comes from the 6-DOF broom plant and FlightController. A policy supplies
+desired world velocity; `intent_for_velocity` maps that request back into stick
+inputs."""
 
 from __future__ import annotations
 
@@ -73,7 +66,6 @@ class BroomAgent:
         else:
             self.sensors = self.est = None
 
-    # ------------------------------------------------------------------ #
     def _spawn_flying(self) -> None:
         """Pre-spin the rotors to hover and hand control straight to the rider."""
         self.dyn.fan_thrust[:] = self.p.hover_thrust / self.p.num_fans
@@ -81,7 +73,7 @@ class BroomAgent:
         self.fc.mapper.reset(self.dyn.state)
         self.fc._was_manual = True
 
-    # ----- Player-compatible surface ---------------------------------- #
+    # Player-compatible surface.
     @property
     def pos(self) -> np.ndarray:
         return self.dyn.state.pos
@@ -95,14 +87,12 @@ class BroomAgent:
         n = float(np.linalg.norm(d))
         return self.pos.copy() if n < 1e-6 else self.pos + (d / n) * self.reach
 
-    # ----- stepped by the World/match each tick ----------------------- #
     def act(self, world, dt: float, vel_override: np.ndarray | None = None) -> None:
         if vel_override is not None:
-            # The referee (Dementor) owns the velocity: it already folded in
-            # any penalty state and inter-broom deconfliction.
+            # The referee has already folded penalties and separation into this velocity.
             v_des = np.asarray(vel_override, float)
         elif self.tagged_out and world.t < self._penalty_until:
-            v_des = np.array([0.0, 0.0, -0.3])   # penalised: drift down, idle
+            v_des = np.array([0.0, 0.0, -0.3])   # penalised: descend at idle power
         else:
             self.tagged_out = False
             v_des = self.rider_ai(world, self)
@@ -111,9 +101,7 @@ class BroomAgent:
         intent = intent_for_velocity(self.dyn.state, v_des, self.p)
 
         if self.state_source == "estimate":
-            # Read the IMU every tick (cheap; the rate loop needs fresh gyro),
-            # but run the heavy 15-state EKF predict/fuse only every ekf_div
-            # ticks -- fast inner control on a 100 Hz estimate.
+            # Keep gyro fresh for the rate loop; run the full EKF at the configured decimation.
             gyro, accel = self.sensors.imu(self.dyn.state, self.dyn.accel_world)
             self._imu_accum.append((gyro, accel))
             est = self.est.state

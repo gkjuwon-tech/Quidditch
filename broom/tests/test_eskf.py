@@ -1,4 +1,4 @@
-"""Error-state EKF: tight attitude, and robust fly-on-estimate through wind.
+"""Error-state EKF: tight attitude, and robust closed-loop estimation through wind.
 
 These assert the properties that matter, with generous bounds so they pass
 across noise seeds. The headline (EKF ~2 deg / ~5 cm in gusting wind vs the

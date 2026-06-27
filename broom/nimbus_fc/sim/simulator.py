@@ -52,7 +52,6 @@ class Simulator:
         else:
             self.sensors = self.estimator = None
 
-    # ------------------------------------------------------------------ #
     def step(self, intent: RiderIntent, cmd: Commands, link_ok: bool = True):
         p, dt = self.p, self.p.dt
 
@@ -80,7 +79,6 @@ class Simulator:
         self._tick += 1
         return out
 
-    # ------------------------------------------------------------------ #
     def run(self, duration: float, controller):
         """controller(t, sim) -> (RiderIntent, Commands, link_ok)."""
         n = int(duration / self.p.dt)
@@ -90,7 +88,6 @@ class Simulator:
             self.step(intent, cmd, link_ok)
         return self.log
 
-    # ------------------------------------------------------------------ #
     def _record(self, out) -> None:
         s = self.dyn.state
         eul = np.rad2deg(s.euler)

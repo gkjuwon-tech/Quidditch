@@ -62,7 +62,6 @@ def _events(world, limit=10):
         print(f"    ... (+{len(world.events) - limit} more)")
 
 
-# --------------------------------------------------------------------------- #
 def scn_snitch():
     _header("snitch", "Predictive evasion. One seeker can't catch it; it takes "
                       "a coordinated pack.")
@@ -129,7 +128,7 @@ def scn_match():
     w = World()
     w.hoops = _hoops()
     rng = np.random.default_rng(0)
-    # players milling about on scripted loops
+    # players holding patrol patterns on scripted loops
     for i in range(4):
         a = 2 * np.pi * i / 4
         pl = Player(i, [20 * np.cos(a), 12 * np.sin(a), 9], max_speed=12, reach=0.9)

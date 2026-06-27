@@ -39,7 +39,6 @@ class BludgerPursuit:
         self._retreat_dir = np.zeros(3)
         self.hits: dict[int, int] = {}
 
-    # ------------------------------------------------------------------ #
     def update(self, world, ball, dt):
         body = ball.body
 
@@ -86,7 +85,6 @@ class BludgerPursuit:
         speed = min(self.p.max_speed, max(10.0, 8.0 * (d - self.tag_radius)))
         return v / n * speed
 
-    # ------------------------------------------------------------------ #
     def _select_target(self, world, body):
         live = [pl for pl in world.players if getattr(pl, "tagged_out", False) is False]
         if not live:

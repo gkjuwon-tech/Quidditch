@@ -45,10 +45,9 @@ class Estimator:
         self.k_pos = 8.0
         self.k_vel = 10.0
 
-    # ------------------------------------------------------------------ #
     def predict(self, gyro: np.ndarray, accel_body: np.ndarray, dt: float) -> None:
         """High-rate prediction from IMU (call every inner loop)."""
-        # --- attitude: Mahony correction with maneuver-compensated gravity ---
+        # Attitude: mahony correction with maneuver-compensated gravity
         # The accelerometer reads specific force = a_world - g. To recover a
         # clean gravity reference even while accelerating, subtract the known
         # kinematic acceleration (from the velocity estimate, low-passed):
@@ -67,7 +66,7 @@ class Estimator:
         omega = gyro - self.gyro_bias + self.kp_mahony * corr
         self.q = m.quat_integrate(self.q, omega, dt)
 
-        # --- position/velocity: dead-reckon with specific force ---------
+        # Position/velocity: dead-reckon with specific force
         accel_world = m.quat_rotate(self.q, accel_body) + np.array([0, 0, -m.GRAVITY])
         # Track kinematic accel (low-pass) for next step's gravity compensation.
         beta = 1.0 - np.exp(-dt / 0.15)
@@ -82,7 +81,6 @@ class Estimator:
         self.pos += ap * (pos_meas - self.pos)
         self.vel += av * (vel_meas - self.vel)
 
-    # ------------------------------------------------------------------ #
     @property
     def state(self) -> State:
         return State(self.pos.copy(), self.vel.copy(), self.q.copy(),

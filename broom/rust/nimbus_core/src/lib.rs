@@ -1,8 +1,8 @@
-//! C ABI for the NIMBUS hard-real-time control core.
+//! C ABI for the NIMBUS real-time control core.
 //!
 //! Layout note: every FFI scalar is f64 (no mixed-width fields) so the structs
 //! have trivial, predictable layout that a Python ctypes.Structure mirrors
-//! exactly -- no padding surprises across the boundary.
+//! exactly -- no unexpected padding across the boundary.
 //!
 //! Builds two ways:
 //!   * default (feature "std"): cdylib with heap-based create/destroy, used by
@@ -141,8 +141,7 @@ pub unsafe extern "C" fn nc_destroy(ctrl: *mut Controller) {
     }
 }
 
-// ---- no-alloc placement API (works on bare metal; no heap required) ----
-
+// No-alloc placement API (works on bare metal; no heap required)
 /// Size in bytes of a `Controller`, so firmware can reserve static storage.
 #[no_mangle]
 pub extern "C" fn nc_size() -> usize {

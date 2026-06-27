@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """NIMBUS full match -- broom-flown players + balls + the Dementor referee.
 
-    python scenarios/match.py seek     # real brooms coordinate to catch the snitch
-    python scenarios/match.py match    # full chaos: seekers, bludger, quaffle, keeper
+    python scenarios/match.py seek     # broom agents coordinate to catch the snitch
+    python scenarios/match.py match    # integrated scenario: seekers, bludger, quaffle, keeper
     python scenarios/match.py kill      # master emergency stop
     python scenarios/match.py all
 
@@ -78,7 +78,6 @@ def _report(world, dem, mb, msep):
           f"min ball-to-person {msep:+.2f} m")
 
 
-# --------------------------------------------------------------------------- #
 def scn_seek():
     _header("seek", "Two real broom-flown seekers coordinate to run down the "
                     "snitch; the Dementor keeps them from colliding.")

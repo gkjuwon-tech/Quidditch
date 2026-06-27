@@ -7,7 +7,7 @@ mismatch shows up honestly (today they match; that's a knob for robustness
 testing later).
 
 Integration: semi-implicit Euler at the inner-loop rate. At 400 Hz this is
-stable and cheap; the attitude quaternion uses exact-ish first-order
+stable and low cost; the attitude quaternion uses exact-ish first-order
 integration with renormalization.
 """
 
@@ -47,23 +47,22 @@ class Dynamics:
         # Last linear acceleration in world frame (for sensor synthesis).
         self.accel_world = np.zeros(3)
 
-    # ------------------------------------------------------------------ #
     def step(self, fan_cmd: np.ndarray, dt: float) -> State:
         p = self.p
         s = self.state
 
-        # --- actuator lag: exact first-order toward command -------------
+        # Actuator lag: exact first-order toward command
         alpha = 1.0 - np.exp(-dt / max(p.fan_tau, 1e-6))
         self.fan_thrust += (np.clip(fan_cmd, p.fan_thrust_min, p.fan_thrust_max)
                             - self.fan_thrust) * alpha
         f = self.fan_thrust
 
-        # --- resolve wrench from real fan thrusts -----------------------
+        # Resolve wrench from real fan thrusts
         wrench = self.A @ f
         T = float(wrench[0])
         torque_fans = wrench[1:]
 
-        # --- forces (world ENU) -----------------------------------------
+        # Forces (world enu)
         thrust_world = m.quat_rotate(s.quat, np.array([0.0, 0.0, T]))
         gravity = np.array([0.0, 0.0, -p.mass * m.GRAVITY])
         # Drag acts on AIRSPEED (ground velocity minus wind), not ground speed.
@@ -75,13 +74,13 @@ class Dynamics:
         accel = (thrust_world + gravity + drag) / p.mass
         self.accel_world = accel
 
-        # --- torques (body) ---------------------------------------------
+        # Torques (body)
         gyro = np.cross(s.omega, self.I * s.omega)
         rot_damp = -p.drag_rot * s.omega
         torque = torque_fans + rot_damp - gyro
         omega_dot = self.I_inv * torque
 
-        # --- integrate (semi-implicit) ----------------------------------
+        # Integrate (semi-implicit)
         s.vel = s.vel + accel * dt
         s.pos = s.pos + s.vel * dt
         s.omega = s.omega + omega_dot * dt
@@ -91,7 +90,6 @@ class Dynamics:
         self._ground_contact()
         return s
 
-    # ------------------------------------------------------------------ #
     def _ground_contact(self) -> None:
         """Simple non-penetrating ground at z=0 with friction when resting."""
         s = self.state

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Golden Snitch — keep the WALNUT, keep the AGILITY, fly a whole match.
+"""Golden Snitch — keep the walnut-scale envelope, keep the agility envelope, fly a whole match.
 
 The Snitch has the broom's exact problem, shrunk to 50 g. A walnut-sized ball
 has almost no disc area, so 4 micro-EDFs (Ø16 mm) hover at a brutal disc
 loading => tens of watts out of a 1S 300 mAh cell (~1.1 Wh). That is a
-~3-minute hover sprint, and under real evasion (32 m/s^2 jukes) far less --
+~3-minute hover sprint, and under real evasion (32 m/s^2 maneuvers) far less --
 which is *exactly* why the guidance already fades the Snitch out over
 fatigue_tau = 120 s (ball/params.py): the software was quietly modelling a
 battery that dies in two minutes.
@@ -22,11 +22,11 @@ existing 300 mAh cell stops being the engine and becomes a peak/ride-through
 BUFFER -- exactly the role the broom's 2600 Wh pack plays in the hybrid.
 
   * average power: supplied continuously by the beam (harvested >= draw);
-  * peak power (32 m/s^2 jukes): supplied by a graphene SUPERCAP (SNT-17);
+  * peak power (32 m/s^2 maneuvers): supplied by a graphene SUPERCAP (SNT-17);
   * beam occlusion (a player's body crosses the beam): rode through on the
     1S LiPo (SNT-12), now a backup, not the source.
 
-Form kept (still a 50 g walnut). Agility kept (full juke bursts from the
+Form kept (still a 50 g walnut). Agility kept (full maneuver bursts from the
 supercap). Match filled (continuous flight anywhere inside the lit pitch).
 
     python3 analysis/snitch_endurance.py
@@ -37,20 +37,20 @@ import csv
 import math
 import os
 
-# ---- the ball, mirrored from broom/nimbus_fc/ball/params.py snitch() ----
+# The ball, mirrored from broom/nimbus_fc/ball/params.py snitch()
 G          = 9.81
 M_SNITCH   = 0.05         # kg  (snitch.mass) -- the canon walnut, unchanged
 R_SHELL    = 0.04         # m   (snitch.radius) -- the rectenna's projected area
 N_FANS     = 4            # micro-EDF swarm core (SNT-05)
 FAN_D      = 0.016        # m   (SNT-05: Ø16 mm internal)
-MAX_ACCEL  = 32.0         # m/s^2 (snitch.max_accel) -- absurd agility, kept
-FATIGUE_TAU = 120.0       # s   (snitch fatigue_tau) -- the tell-tale 2 minutes
+MAX_ACCEL  = 32.0         # m/s^2 (snitch.max_accel) -- high agility, kept
+FATIGUE_TAU = 120.0       # s   (snitch fatigue_tau)
 
-# ---- the existing onboard cell (SNT-12), now a BUFFER not the engine ----
+# Existing onboard cell (SNT-12); buffer, not primary energy
 CELL_WH      = 1.11       # 1S 300 mAh LiPo  (3.7 V x 0.30 Ah)
 CELL_USABLE  = 0.90       # usable fraction
 
-# ---- micro-EDF aero / electrical efficiencies ---------------------------
+# Micro-EDF aerodynamic and electrical efficiencies
 RHO        = 1.225
 FM_MICRO   = 0.50         # figure of merit, small low-Reynolds ducts (broom: 0.62)
 ETA_MOTOR  = 0.80
@@ -58,18 +58,18 @@ ETA_ESC    = 0.92
 ETA_WIRE   = 0.96
 ETA_ELEC   = ETA_MOTOR * ETA_ESC * ETA_WIRE
 
-# ---- pitch power-beaming link (SNT-20 infra + SNT-15/16 onboard) --------
+# Pitch power-beaming link (SNT-20 infrastructure, SNT-15/16 onboard)
 FREQ_HZ      = 5.8e9      # ISM band
 C_LIGHT      = 2.998e8
 BEAM_RANGE_M = 25.0       # design range: array perimeter -> mid-pitch Snitch
 A_TX_M2      = 6.0        # transmit phased-array effective aperture
 ETA_DC_RF    = 0.70       # array DC -> radiated RF
 ETA_RF_DC    = 0.55       # rectenna RF -> DC (SNT-16)
-DUTY         = 0.80       # match-average draw / hover draw (jukes buffered;
+DUTY         = 0.80       # match-average draw / hover draw (maneuvers buffered;
                           # cruise/coast pulls the time-average below a burst)
 
-# ---- peak buffer (SNT-17 supercap) + ride-through (SNT-12) ---------------
-JUKE_BURST_S = 0.40       # a single evasive burst the supercap must cover
+# Peak buffer (SNT-17 supercap) and ride-through (SNT-12)
+JUKE_BURST_S = 0.40       # s, burst duration covered by the supercap
 SUPERCAP_F   = 7.0        # graphene EDLC capacitance
 SUPERCAP_V   = 5.4        # charged voltage
 SUPERCAP_VMIN = 2.7       # usable floor (half voltage)
@@ -93,11 +93,11 @@ def main() -> int:
     A = disc_area()
     W = M_SNITCH * G
 
-    # [1] battery-only sprint -------------------------------------------------
+    # Battery-only reference case.
     p_hover = hover_draw_w(W, A)
     sprint_s = CELL_WH * CELL_USABLE / p_hover * 3600.0
 
-    # [2] the beamed-power fix ------------------------------------------------
+    # Beamed-power case.
     lam = C_LIGHT / FREQ_HZ
     g_tx = 4 * math.pi * A_TX_M2 / lam ** 2
     a_rx = math.pi * R_SHELL ** 2                      # lit hemisphere of the shell
@@ -110,8 +110,8 @@ def main() -> int:
     p_tx_rf = p_rx_rf / capture                         # RF the array must radiate
     p_array_dc = p_tx_rf / ETA_DC_RF                    # wall power into the array
 
-    # [3] peak buffer + ride-through -----------------------------------------
-    a_peak = math.sqrt(MAX_ACCEL ** 2 + G ** 2)         # juke accel + holding gravity
+    # Peak buffer and ride-through checks.
+    a_peak = math.sqrt(MAX_ACCEL ** 2 + G ** 2)         # maneuver accel + holding gravity
     t_peak = M_SNITCH * a_peak
     p_peak = hover_draw_w(t_peak, A)
     e_burst = p_peak * JUKE_BURST_S
@@ -125,7 +125,6 @@ def main() -> int:
     buffer_ok = bursts_covered >= 1.0
     form_ok = True   # 50 g kept: rectenna is printed onto the shell, supercap ~1-2 g
 
-    # ---- print --------------------------------------------------------------
     print("=" * 68)
     print(" GOLDEN SNITCH — MATCH ENDURANCE (beamed-power range extender)")
     print(" keep the walnut, keep the agility, fill a whole match")
@@ -143,23 +142,23 @@ def main() -> int:
     print(f"    link .................. {FREQ_HZ/1e9:.1f} GHz, range {BEAM_RANGE_M:.0f} m, "
           f"array aperture {A_TX_M2:.0f} m^2")
     print(f"    end-to-end capture .... {capture*100:8.2f} %   (Friis: G_tx x G_rx x path)")
-    print(f"    match-avg draw ........ {p_avg:8.1f} W   (= {DUTY:.2f} x hover, jukes buffered)")
+    print(f"    match-avg draw ........ {p_avg:8.1f} W   (= {DUTY:.2f} x hover, maneuvers buffered)")
     print(f"    RF at the rectenna .... {p_rx_rf:8.1f} W")
     print(f"    array radiated RF ..... {p_tx_rf/1000:8.2f} kW")
     print(f"    array wall power ...... {p_array_dc/1000:8.2f} kW  (pitch infra, SNT-20)")
     print(f"    >> harvested >= draw, continuously, anywhere in the lit pitch.")
 
     print("\n[3] buffers — agility and occlusion, both covered")
-    print(f"    juke peak draw ........ {p_peak:8.1f} W   (accel {MAX_ACCEL:.0f} m/s^2 + hold g)")
+    print(f"    maneuver peak draw ........ {p_peak:8.1f} W   (accel {MAX_ACCEL:.0f} m/s^2 + hold g)")
     print(f"    energy per {JUKE_BURST_S:.1f}s burst .. {e_burst:8.1f} J")
     print(f"    supercap usable ....... {e_supercap:8.1f} J   ({SUPERCAP_F:.0f} F @ {SUPERCAP_V:.1f} V, SNT-17)")
-    print(f"    bursts per charge ..... {bursts_covered:8.1f}  (>=1 -> full juke from the cap)")
+    print(f"    bursts per charge ..... {bursts_covered:8.1f}  (>=1 -> full maneuver from the cap)")
     print(f"    LiPo ride-through ..... {ride_through_s:8.0f} s   (beam occluded by a body, SNT-12)")
 
     fills = harvest_ok and buffer_ok and form_ok
     print("\n" + "=" * 68)
     print(f" VERDICT: form PASS (still a 50 g walnut) · "
-          f"agility PASS (full {MAX_ACCEL:.0f} m/s^2 jukes from the supercap) · "
+          f"agility PASS (full {MAX_ACCEL:.0f} m/s^2 maneuvers from the supercap) · "
           f"power {'PASS' if harvest_ok else 'FAIL'}")
     print(f" ENDURANCE {'CONTINUOUS inside the lit pitch -> FILLS A MATCH' if fills else 'short'}"
           f" (>= {MATCH_TARGET_MIN:.0f} min, no hot-swap pit needed).")
@@ -178,7 +177,7 @@ def main() -> int:
         w.writerow(["link_capture_pct", f"{capture*100:.2f}", "%"])
         w.writerow(["match_avg_draw_w", f"{p_avg:.1f}", "W"])
         w.writerow(["array_wall_power_kw", f"{p_array_dc/1000:.2f}", "kW"])
-        w.writerow(["juke_peak_draw_w", f"{p_peak:.1f}", "W"])
+        w.writerow(["maneuver_peak_draw_w", f"{p_peak:.1f}", "W"])
         w.writerow(["supercap_bursts", f"{bursts_covered:.1f}", "-"])
         w.writerow(["lipo_ride_through_s", f"{ride_through_s:.0f}", "s"])
         w.writerow(["match_flight", "continuous", "in-pitch"])

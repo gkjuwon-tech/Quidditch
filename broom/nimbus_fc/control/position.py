@@ -35,13 +35,12 @@ class PositionController:
         self.vel_xy.reset()
         self.vel_z.reset()
 
-    # ------------------------------------------------------------------ #
     def update(self, sp: Setpoint, state: State, dt: float):
         """Return (collective_thrust_N, q_des, yaw_rate_ff)."""
         p = self.p
         pos, vel = state.pos, state.vel
 
-        # --- horizontal: pos -> vel_sp -> accel_sp ----------------------
+        # Horizontal: pos -> vel_sp -> accel_sp
         # Velocity setpoint respects a stopping-distance profile so the vehicle
         # can always brake within its accel budget (no overshoot-into-flip).
         # Position hold is per-axis: a NaN component means "velocity mode on
@@ -60,29 +59,28 @@ class PositionController:
         acc_xy = self.vel_xy.update(vel_sp_xy, vel[:2], dt)
         acc_xy = m.clamp_norm(acc_xy, p.max_accel_xy)
 
-        # --- vertical: alt -> climb_sp -> accel_sp ----------------------
+        # Vertical: alt -> climb_sp -> accel_sp
         vel_sp_z = sp.vel_ff[2]
         if sp.pos is not None and np.isfinite(sp.pos[2]):
             vel_sp_z += p.kp_pos_z * (sp.pos[2] - pos[2])
         vel_sp_z = float(np.clip(vel_sp_z, -p.max_descent_rate, p.max_climb_rate))
         acc_z = float(self.vel_z.update([vel_sp_z], [vel[2]], dt)[0])
 
-        # --- desired thrust vector (world), gravity compensated ---------
+        # Desired thrust vector (world), gravity compensated
         acc_sp = np.array([acc_xy[0], acc_xy[1], acc_z])
         thrust_vec = p.mass * acc_sp + np.array([0.0, 0.0, p.hover_thrust])
         thrust_vec = self._limit_tilt(thrust_vec)
 
-        # --- collective = projection on current body-up -----------------
+        # Collective = projection on current body-up
         body_z = m.quat_rotate(state.quat, np.array([0.0, 0.0, 1.0]))
         collective = float(np.dot(thrust_vec, body_z))
         collective = max(collective, 0.2 * p.hover_thrust)  # never free-fall
 
-        # --- desired attitude from thrust direction + yaw ---------------
+        # Desired attitude from thrust direction + yaw
         yaw_des = sp.yaw if sp.yaw is not None else m.yaw_of(state.quat)
         q_des = self._attitude_from_thrust(thrust_vec, yaw_des)
         return collective, q_des, sp.yaw_rate_ff
 
-    # ------------------------------------------------------------------ #
     def _limit_tilt(self, thrust_vec: np.ndarray) -> np.ndarray:
         """Clamp the thrust-vector tilt from vertical to params.max_tilt."""
         z = max(thrust_vec[2], 1e-3)

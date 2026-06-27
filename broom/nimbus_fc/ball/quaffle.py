@@ -35,7 +35,6 @@ class QuaffleBehavior:
         self._held_since = 0.0
         self._aim = None
 
-    # ------------------------------------------------------------------ #
     def update(self, world, ball, dt):
         body = ball.body
 

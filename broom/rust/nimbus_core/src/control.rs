@@ -1,5 +1,5 @@
-//! Cascaded control core, faithful to nimbus_fc.control.{pid,position,attitude,rate,mixer}.
-//! Fixed-size, allocation-free hot path. NUM_FANS pinned at 8.
+//! Cascaded control core, kept in parity with nimbus_fc.control.{pid,position,attitude,rate,mixer}.
+//! Fixed-size, allocation-free control path. NUM_FANS pinned at 8.
 
 use crate::math::*;
 
@@ -123,14 +123,14 @@ impl Controller {
         let quat = [state[6], state[7], state[8], state[9]];
         let omega = [state[10], state[11], state[12]];
 
-        // ---- outer loop (position) at reduced rate ----
+        // Outer loop (position) at reduced rate
         if self.tick % (p.pos_loop_div as u64) == 0 {
             let dt_pos = p.dt * p.pos_loop_div as f64;
             self.position(&pos, &vel, &quat, sp, dt_pos);
         }
         self.tick += 1;
 
-        // ---- attitude: quat error -> rate setpoint ----
+        // Attitude: quat error -> rate setpoint
         let err = quat_error_angle_axis(quat, self.q_des);
         let mut rate_sp = [
             self.p.kp_att_rp * err[0],
@@ -142,10 +142,10 @@ impl Controller {
             rate_sp[i] = clip(rate_sp[i], -rl[i], rl[i]);
         }
 
-        // ---- rate: PID -> torque ----
+        // Rate: pid -> torque
         let torque = self.rate_pid.update(rate_sp, omega, self.p.dt);
 
-        // ---- mixer ----
+        // Mixer
         self.allocate(self.collective, torque)
     }
 

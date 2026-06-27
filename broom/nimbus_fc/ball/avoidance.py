@@ -52,7 +52,6 @@ class NoContactAvoidance:
                 out += (needed_out - cur_out) * n
         return out
 
-    # ------------------------------------------------------------------ #
     @staticmethod
     def min_separation(body: BallBody, players: list[Player]) -> float:
         """Current shell-to-body clearance to the nearest person (negative = touch)."""

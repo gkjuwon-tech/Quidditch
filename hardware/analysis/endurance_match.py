@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Challenge 4 — keep the FORM, keep the POWER, fly a whole match.
+"""Challenge 4 — keep the form factor, keep the power budget, fly a whole match.
 
 Battery-only, the broomstick is a ~60 s sprinter (analysis/flight_thermal.py):
 no disc area => ~150 kW hover => 2.6 kWh dies in a minute. You cannot fix that
@@ -26,13 +26,13 @@ from __future__ import annotations
 import csv
 import os
 
-# ---- battery-only baseline (from analysis/flight_thermal.py) ------------
+# Battery-only baseline (from analysis/flight_thermal.py)
 M_BASE       = 120.0      # kg all-up, battery-only
 P_HOVER_BASE = 153.3      # kW electrical draw at hover, base mass
 THRUST_AVAIL = 8 * 360.0  # N, unchanged (params.fan_thrust_max x num_fans)
 G            = 9.81
 
-# ---- series-hybrid powertrain -------------------------------------------
+# Series-hybrid powertrain
 SAF_WH_KG       = 11900.0   # sustainable aviation fuel specific energy (Wh/kg)
 ETA_GENSET      = 0.30      # fuel -> electrical (micro-turbine + generator)
 GENSET_KW_PER_KG = 4.2      # micro-turbine genset power density
@@ -41,7 +41,7 @@ TANK_FRAC       = 0.10      # tank/bladder mass as a fraction of fuel
 DUTY            = 0.50      # match-average power / hover power. Forward flight
                             # needs far less than hover (induced power drops with
                             # airspeed), and players cruise/dive more than they hover.
-MATCH_TARGET_MIN = 18.0     # a credible full-match continuous flight time to beat
+MATCH_TARGET_MIN = 18.0     # minimum continuous flight time for the match profile
 
 OUT_CSV = os.path.join(os.path.dirname(__file__), "endurance_match.csv")
 

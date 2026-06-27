@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Challenge 5 — fly HIGH, like real Quidditch.
+"""Challenge 5 — altitude ceiling and recovery margins.
 
 Real Quidditch is played far up in the air, not at 18 m. Two honest questions
 when you climb:
@@ -26,14 +26,14 @@ RHO0         = 1.225          # kg/m^3 sea-level density
 SCALE_H      = 8500.0         # m, density scale height (isothermal approx)
 THRUST_SL    = 8 * 360.0      # N at sea level (params: fan_thrust_max x num_fans)
 
-# the two configs we care about
+# Configurations under comparison
 M_SPRINT     = 120.0          # battery-only all-up (params.mass)
 M_HYBRID     = 166.0          # series-hybrid all-up (analysis/endurance_match.py)
 
 QUIDDITCH_CEILING = 150.0     # m, the league ceiling we want to fly to
 TW_MARGIN    = 1.30           # minimum thrust-to-weight we insist on keeping
 
-# parachute (whole-vehicle ballistic recovery, sized for the heavy config)
+# Whole-vehicle ballistic recovery, sized for the heavy configuration
 CD_CANOPY    = 1.40
 V_DESCENT    = 6.5            # m/s target touchdown rate under canopy (survivable)
 BRS_DEPLOY_M = 45.0          # m, rocket-deployed full-inflation altitude

@@ -1,4 +1,4 @@
-"""3D geofence: the invisible rubber walls of the pitch.
+"""3D geofence: pitch keep-in volume and boundary handling.
 
 Acts at the setpoint level (clean separation from the controller). The pitch is
 an axis-aligned box, so the fence works per world axis, which makes it both
@@ -39,7 +39,6 @@ class Geofence:
         # Conservative brake accel for stop prediction (starts braking early).
         self.a_brake = 0.5 * params.max_accel_xy
 
-    # ------------------------------------------------------------------ #
     def apply(self, state: State, sp: Setpoint,
               allow_ground: bool = False) -> tuple[Setpoint, bool]:
         pos, vel = state.pos, state.vel
@@ -68,7 +67,6 @@ class Geofence:
                 breaching = breaching or pos[k] < lo[k]
         return sp, breaching
 
-    # ------------------------------------------------------------------ #
     @staticmethod
     def _hold_axis(sp: Setpoint, k: int, bound: float, outward_sign: float) -> None:
         """Replace this axis with a position-hold at the boundary; kill outward vel."""
@@ -81,7 +79,6 @@ class Geofence:
         else:
             sp.vel_ff[k] = max(sp.vel_ff[k], 0.0)
 
-    # ------------------------------------------------------------------ #
     def contains(self, pos: np.ndarray, slack: float = 0.5) -> bool:
         """True if inside the hard wall (keep-in box + keep_in + slack)."""
         lo = self.lo - self.keep_in - slack

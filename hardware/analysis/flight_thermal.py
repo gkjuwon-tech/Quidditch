@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""NIMBUS broom — flight + thermal budget that has to actually close.
+"""NIMBUS broom — flight + thermal budget flight and thermal budget.
 
 A bare broomstick has almost no disc area, so the honest questions are:
   1) can 8 ducted fans even lift a 120 kg rider+airframe? (thrust budget)
@@ -19,7 +19,7 @@ import csv
 import math
 import os
 
-# ---- inputs, mirrored from nimbus_fc/core/params.py ---------------------
+# Inputs, mirrored from nimbus_fc/core/params.py
 G            = 9.81
 MASS         = 120.0          # kg, rider ~80 + airframe ~40   (params.mass)
 N_FANS       = 8              # params.num_fans (_default_fan_layout)
@@ -27,16 +27,16 @@ T_MAX_FAN    = 360.0          # N, params.fan_thrust_max  (cluster T/W ~2.4)
 BATT_WH      = 2600.0         # params.batt_capacity_wh
 RTP_SOC      = 0.30           # params.batt_rtp_soc  (forced pit at 30%)
 
-# ---- airframe geometry (hardware/cad/broom.scad) ------------------------
-# HONEST CONSTRAINT: the disc must fit ENTIRELY inside the visible silhouette,
+# Airframe geometry (hardware/cad/broom.scad)
+# Constraint: the disc must fit entirely inside the visible silhouette,
 # so the main fan is sized to nest within the bristle flare at its widest (it
 # does not protrude in any non-cutaway view). The flare frontal area is the
-# disc-area ceiling -- the real physical price of keeping a broom shape.
+# disc-area ceiling -- the packaging cost of keeping the broom silhouette.
 D_MAIN       = 0.34          # m, main lift fan, fits inside the bristle leaf
 D_SHAFT_FAN  = 0.055         # m, each of the in-shaft trim/attitude fans
 N_SHAFT_FAN  = 8
 
-# ---- efficiencies / environment -----------------------------------------
+# Efficiencies / environment
 RHO          = 1.225         # kg/m^3 air
 FM           = 0.62          # ducted-fan figure of merit (ducts beat open props)
 ETA_MOTOR    = 0.88
@@ -84,7 +84,6 @@ def main() -> int:
     endur_full = BATT_WH / P_draw * 3600.0               # s, to empty (P_draw in W)
     endur_pit = BATT_WH * (1 - RTP_SOC) / P_draw * 3600.0  # s, to forced RTP
 
-    # ---- print ----
     print("=" * 68)
     print(" NIMBUS-9¾ BROOM — FLIGHT + THERMAL BUDGET")
     print(" (a thin stick that has to carry a person, honestly)")
@@ -99,7 +98,7 @@ def main() -> int:
     line("thrust_to_weight", f"{tw:.2f}", "-", "PASS" if flight_ok else "FAIL")
     line("hover_throttle", f"{hover_frac*100:.0f}", "%")
 
-    print("\n[2] DISC + POWER — the brutal cost of having no disc area")
+    print("\n[2] DISC + power budget — the brutal cost of having no disc area")
     print(f"    effective disc area ... {A*1e4:8.0f} cm^2  (bristle shroud + shaft fans)")
     print(f"    disc loading .......... {DL/1000:8.1f} kPa   (helicopters live near 0.5)")
     print(f"    exhaust velocity ...... {v_exh:8.0f} m/s")

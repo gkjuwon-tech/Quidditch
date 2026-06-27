@@ -67,7 +67,7 @@ class RiderInputDecoder:
         return make_intent(pitch, roll, yaw, lift)
 
 
-# ---- use the real RiderIntent if we can find the flight package ---------
+# Use the real riderintent if we can find the flight package
 def _load_real_intent():
     here = os.path.dirname(os.path.abspath(__file__))
     broom = os.path.normpath(os.path.join(here, "..", "..", "broom"))

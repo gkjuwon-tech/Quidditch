@@ -21,16 +21,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-# --- mirrors nimbus_fc/core/params.py (single source of truth there) -----
+# Mirrors nimbus_fc/core/params.py (single source of truth there)
 NUM_FANS       = 8
 FAN_THRUST_MAX = 360.0     # N at full throttle           (params.fan_thrust_max)
 FAN_TAU        = 0.04      # s, 1st-order thrust response  (params.fan_tau)
 
-# --- DShot ----------------------------------------------------------------
+# Dshot
 DSHOT_MIN      = 48        # 0..47 are reserved commands; 48 = 0% throttle
 DSHOT_MAX      = 2047
 
-# --- thermal governor knobs ----------------------------------------------
+# Thermal governor knobs
 T_WARN_C       = 105.0     # start derating windings here
 T_MAX_C        = 120.0     # hard winding limit -> floor authority
 DERATE_FLOOR   = 0.55      # never derate below this (you're carrying a person)
