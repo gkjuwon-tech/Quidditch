@@ -190,6 +190,14 @@ make all      # everything
 OpenSCAD models are parametric — open any `cad/*.scad`, set `cutaway=true` to
 reveal the internals (`make cad` renders both).
 
+### Building one by hand (and flying it)
+
+Buying the parts and assembling the broom in a lab? The full step-by-step build
++ first-flight manual is **[ASSEMBLY_GUIDE.md](ASSEMBLY_GUIDE.md)** — Phase A→G
+assembly keyed to every BOM part (BRM-01…41), ground tie-down tests, the
+power-on sequence, boarding, low-altitude flight, landing, shutdown, and
+emergency procedures. (Disclaimer: it is also, deliberately, very funny.)
+
 ---
 
 ## Bill of materials
