@@ -1,0 +1,119 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-ink text-parchment/90 font-sans antialiased;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+/* selection */
+::selection {
+  background: rgba(217, 164, 65, 0.35);
+  color: #fff;
+}
+
+/* scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0805;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(#a9741f, #5e3f12);
+  border-radius: 99px;
+}
+
+@layer components {
+  .container-x {
+    @apply mx-auto w-full max-w-6xl px-6 md:px-10;
+  }
+
+  .gold-text {
+    background: linear-gradient(100deg, #f4d98b 0%, #d9a441 40%, #a9741f 70%, #f4d98b 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    @apply animate-shimmer;
+  }
+
+  .display {
+    @apply font-display tracking-[0.04em];
+  }
+
+  .eyebrow {
+    @apply font-display text-xs md:text-sm uppercase tracking-[0.45em] text-gold/80;
+  }
+
+  .btn {
+    @apply relative inline-flex items-center justify-center gap-2 rounded-sm px-7 py-3.5
+           font-display text-sm uppercase tracking-[0.2em] transition-all duration-300
+           focus:outline-none focus:ring-2 focus:ring-gold/60;
+  }
+  .btn-gold {
+    @apply btn text-ink;
+    background: linear-gradient(180deg, #f4d98b, #d9a441 55%, #a9741f);
+    box-shadow: 0 8px 30px -10px rgba(217, 164, 65, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  }
+  .btn-gold:hover {
+    box-shadow: 0 10px 44px -8px rgba(246, 201, 69, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    transform: translateY(-2px);
+  }
+  .btn-ghost {
+    @apply btn text-gold-soft border border-gold/40 bg-white/[0.02] backdrop-blur-sm;
+  }
+  .btn-ghost:hover {
+    @apply border-gold/80 text-gold-bright bg-gold/5;
+    transform: translateY(-2px);
+  }
+
+  .card {
+    @apply relative rounded-md border border-gold/15 bg-white/[0.025] p-7 backdrop-blur-sm
+           transition-all duration-500;
+  }
+  .card:hover {
+    @apply border-gold/40 bg-white/[0.04];
+    box-shadow: 0 24px 60px -30px rgba(217, 164, 65, 0.5);
+  }
+
+  .hr-ornament {
+    @apply mx-auto my-2 flex items-center justify-center gap-3 text-gold/60;
+  }
+  .hr-ornament::before,
+  .hr-ornament::after {
+    content: "";
+    @apply h-px w-16 md:w-28;
+    background: linear-gradient(90deg, transparent, rgba(217, 164, 65, 0.7), transparent);
+  }
+}
+
+/* film grain + vignette overlay */
+.grain::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 60;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  opacity: 0.04;
+  mix-blend-mode: overlay;
+}
+.vignette::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 55;
+  box-shadow: inset 0 0 220px 60px rgba(0, 0, 0, 0.8);
+}
