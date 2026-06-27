@@ -10,6 +10,12 @@ SNT-08,avionics,Nano flight controller,"STM32 class, IMU on-board, predictive ev
 SNT-09,sensing,Optical-flow + ToF sensor,"360deg-ish reach detection",2,16,32,sensor,ball/snitch.py (predict seeker hand),"Flee where the hand WILL be"
 SNT-10,sensing,Micro LiDAR / proximity ring,"detects incoming hands/airframes",1,45,45,micro lidar,ball/params.py:snitch.danger_radius(4.0m),Wall-repel + don't-get-cornered
 SNT-11,capture,Capacitive capture sensor,"registers an enclosing hand",1,12,12,sensor,ball/params.py:snitch.capture_radius/dwell,Needs a closed hand for capture_dwell(0.25s)
-SNT-12,power,Micro Li-Po cell,"1S 300 mAh, lightweight",1,8,8,battery,ball/params.py:snitch.mass(0.05kg),Whole ball must stay ~50 g
+SNT-12,power,Micro Li-Po cell,"1S 300 mAh, now a ride-through BUFFER (not the engine)",1,8,8,battery,analysis/snitch_endurance.py,"Was the engine (2.7 min sprint = the 'fatigue'); now rides through beam occlusion (~205 s margin). Whole ball still ~50 g"
 SNT-13,branding,Gold micro-LED,"glow so the crowd can track it",1,5,5,LED,—,The fleeing golden spark
 SNT-14,comms,2.4 GHz telemetry link,"reports pose to the Dementor referee",1,14,14,radio,match/dementor.py,Central referee deconfliction
+SNT-15,power,Conformal rectenna array,"5.8 GHz, printed into the gold dimple-vent pattern",1,34,34,custom,analysis/snitch_endurance.py,"THE FIX: the vents (cad/lib/common.scad:vent_pattern) double as antenna elements. Adds ~0 g — it's plated onto the shell"
+SNT-16,power,RF->DC harvester PMIC + MPPT,"rectifier + maximum-power tracking, 5.8 GHz",1,17,17,PMIC,analysis/snitch_endurance.py,"Turns ~32 W of beamed RF into the ~17.5 W match-average draw; tops the supercap + cell"
+SNT-17,power,Graphene supercapacitor,"7 F @ 5.4 V, ~1-2 g — the PEAK buffer",1,12,12,supercap,analysis/snitch_endurance.py,"Serves the full 32 m/s^2 juke bursts (~138 W) the beam can't track fast enough; agility unchanged"
+SNT-18,power,In-shell power-bus + balancing,"rectenna / supercap / cell tri-source manager",1,9,9,custom,analysis/snitch_endurance.py,"Beam = average, supercap = peak, LiPo = occlusion ride-through. Same trick the broom plays with its 2600 Wh buffer"
+SNT-19,comms,Beam-steer retro-beacon,"lets the pitch array lock its spot onto the Snitch",1,11,11,radio,ball/snitch.py (broadcast pose),"Reuses the SNT-14 pose; the array beam-tracks the fleeing ball so the spot follows it"
+SNT-20,infra,Pitch power-beaming array (per pitch),"5.8 GHz phased array, ~6 m^2 aperture, ~2.5 kW wall",1,0,0,infra,analysis/snitch_endurance.py,"SHARED PITCH INFRASTRUCTURE (not per-ball): like the charging pits / SAF supply. Floods the in-bounds volume with steered power. Costed in the pitch-infra package, not the ball"

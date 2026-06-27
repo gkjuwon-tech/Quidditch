@@ -115,6 +115,38 @@ flutter). Form kept, peak power kept, match filled.
 
 ---
 
+## Flying a whole match — the Snitch 🟡 (beamed power)
+
+The Snitch has the *exact same* problem, shrunk to 50 g. A walnut-sized ball has
+almost no disc area either, so 4 micro-EDFs hover at ~22 W out of a 1S 300 mAh
+cell (~1.1 Wh) — a **~2.7 minute** sprint. (That's not a coincidence: the
+guidance already fades the Snitch out at `fatigue_tau` **120 s** — the
+"fatigue" was a dying **battery** all along.) `analysis/snitch_endurance.py`:
+
+```
+[1] BATTERY-ONLY  22 W hover on 1.1 Wh -> ~2.7 min sprint (≈ fatigue_tau)
+[2] BEAMED POWER  5.8 GHz array, 25 m, 1.8% capture -> ~2.5 kW into the pitch
+[3] BUFFERS       supercap fires the 32 m/s² jukes; LiPo rides out occlusion
+VERDICT: form PASS (still 50 g) · agility PASS · MATCH FILLED, no pit.
+```
+
+The broom's lever was **energy density** (carry it as fuel). A 50 g ball can't
+carry a turbine or fuel without blowing the canon walnut form, so the Snitch
+**flips the lever: it doesn't carry the energy at all — it harvests it.** The
+pitch becomes a powered volume: a perimeter **5.8 GHz phased array beams power
+and steers the spot onto the Snitch** using the pose it already broadcasts to
+the referee (`bom/snitch_bom.csv` SNT-19/20). The gold shell's **dimple vents
+double as a conformal rectenna** (SNT-15/16) — the harvester *is* the shell, so
+it adds ~0 mass. The 300 mAh cell becomes a **buffer**, exactly like the broom's
+2600 Wh pack in the hybrid: a **supercap** (SNT-17) fires the full 32 m/s² juke
+bursts, and the LiPo **rides through** the moment a player's body crosses the
+beam. Harvested ≥ draw, continuously, anywhere in-bounds → a Snitch that flies a
+whole match. Honest cost: ~2.5 kW pumped into the pitch, and it can only flee
+where the beam reaches — which is the in-bounds volume it's repelled into
+staying inside anyway. Build it by hand: **[SNITCH_ASSEMBLY_GUIDE.md](SNITCH_ASSEMBLY_GUIDE.md)**.
+
+---
+
 ## Flying HIGH, like real Quidditch
 
 Real Quidditch is vertical — far above 18 m. Climbing raises two honest

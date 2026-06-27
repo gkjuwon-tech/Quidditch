@@ -1,0 +1,10 @@
+metric,value,unit
+hover_draw_w,21.9,W
+battery_only_sprint_s,164,s
+link_capture_pct,1.81,%
+match_avg_draw_w,17.5,W
+array_wall_power_kw,2.52,kW
+juke_peak_draw_w,138.1,W
+supercap_bursts,1.4,-
+lipo_ride_through_s,205,s
+match_flight,continuous,in-pitch

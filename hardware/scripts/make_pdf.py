@@ -62,20 +62,23 @@ PARTS = {
     ),
     "snitch": dict(
         title="GOLDEN SNITCH", code="SNT",
-        sub="Walnut-sized evasion drone with real flapping wings",
+        sub="Walnut-sized evasion drone — beamed-power, full-match flight",
         dims=[
             ("Shell radius", "40 mm (Ø80)", "ball/params.py snitch.radius = 0.04 m"),
-            ("Mass target", "50 g", "snitch.mass = 0.05 kg"),
+            ("Mass target", "50 g (kept)", "snitch.mass = 0.05 kg"),
             ("Top speed", "19 m/s", "snitch.max_speed"),
             ("Max accel", "32 m/s²", "snitch.max_accel (absurdly agile)"),
             ("Lift", "4 × micro-EDF (internal)", "swarm core — the real flight"),
-            ("Wings", "2 × flapping, 8–14 Hz", "coreless gearmotor driven"),
-            ("Capture", "hand held 0.25 s", "capture_radius 0.22 / capture_dwell"),
-            ("Danger sense", "4.0 m", "snitch.danger_radius"),
+            ("Battery sprint", "~2.7 min", "1S 300 mAh alone — ≈ the fatigue_tau"),
+            ("Match endurance", "continuous (beamed)", "analysis/snitch_endurance.py"),
+            ("Pitch power", "~2.5 kW array", "5.8 GHz steered to the broadcast pose"),
         ],
-        note="OFFICIAL STORY: it flies by flapping its wings. The wings are thin "
-             "and genuinely flutter (SNT-02/03/04). The lift is actually the "
-             "internal micro-EDF swarm (SNT-05). Do not explain this to Potterheads.",
+        note="WINGS ARE THEATRE (SNT-02/03/04 flutter; lift is the internal EDF "
+             "swarm SNT-05 — don't tell Potterheads). A 50 g walnut can't carry "
+             "fuel like the broom, so it HARVESTS energy instead: the gold dimple-"
+             "vents double as a 5.8 GHz rectenna (SNT-15/16) and a pitch array beams "
+             "power onto its broadcast pose (SNT-19/20). The cell becomes a buffer "
+             "(jukes on a supercap SNT-17). Form + agility kept, match filled, no pit.",
     ),
     "bludger": dict(
         title="BLUDGER", code="BLG",
