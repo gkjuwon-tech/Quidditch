@@ -1,12 +1,12 @@
-"""Flying agents: the balls and the players, as acceleration-limited masses.
+"""The flying agents -- balls and players -- as accel-limited point masses.
 
-`BallBody` tracks a commanded velocity with a first-order response, capped by
-the ball's acceleration and speed envelope -- a faithful stand-in for a small
-agile drone whose inner loop (the broom cascade) realises the demanded accel.
+BallBody chases a commanded velocity with a first-order response, clamped to
+the ball's accel and speed envelope. It's a fair stand-in for a small agile
+drone whose inner loop (the broom cascade) actually delivers the accel.
 
-`Player` is a kinematic human-on-a-broom: a position, a velocity, a top speed,
-and a `reach` (how far a hand/bat extends). Players are what the balls must
-never physically touch.
+Player is a kinematic human-on-a-broom: position, velocity, a top speed, and a
+reach (how far the hand/bat sticks out). Players are the thing the balls are
+never allowed to physically touch.
 """
 
 from __future__ import annotations
@@ -37,7 +37,7 @@ class BallBody:
 
 
 class Player:
-    """A kinematic player. `reach` is the hand/bat extension from the body."""
+    """A kinematic player. `reach` is how far the hand/bat extends past the body."""
 
     def __init__(self, pid: int, pos, max_speed: float = 14.0,
                  reach: float = 0.9, body_radius: float = 0.35):
@@ -47,7 +47,7 @@ class Player:
         self.max_speed = max_speed
         self.reach = reach
         self.body_radius = body_radius
-        self.vel_tau = 0.18          # players are heavier/slower to respond
+        self.vel_tau = 0.18          # heavier than a ball, so slower to react
         self.max_accel = 12.0
         self.tagged_out = False
         self._penalty_until = 0.0
@@ -63,9 +63,9 @@ class Player:
         self.pos = self.pos + self.vel * dt
 
     def act(self, world, dt: float, vel_override=None) -> None:
-        """Uniform per-tick update used by the World (kinematic player)."""
+        """One World tick for a kinematic player."""
         if self.tagged_out and world.t < self._penalty_until:
-            self.step(np.array([0.0, 0.0, -0.3]), dt)   # penalised: idle drift
+            self.step(np.array([0.0, 0.0, -0.3]), dt)   # serving a penalty: just drift
             return
         self.tagged_out = False
         if vel_override is not None:
@@ -77,7 +77,7 @@ class Player:
         self.step(vel_cmd, dt)
 
     def hand_toward(self, target: np.ndarray) -> np.ndarray:
-        """Position of the outstretched hand reaching toward `target`."""
+        """Where the hand ends up when it reaches toward `target`."""
         d = np.asarray(target, dtype=float) - self.pos
         n = float(np.linalg.norm(d))
         if n < 1e-6:

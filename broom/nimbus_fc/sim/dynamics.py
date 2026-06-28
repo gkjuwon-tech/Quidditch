@@ -1,14 +1,13 @@
-"""6-DOF rigid-body plant for the broom eVTOL.
+"""The 6-DOF rigid-body plant the broom flies against in SITL.
 
-This is the "truth" model the flight controller flies against in SITL. It is
-deliberately independent of the controller's internal mixer: the plant owns
-the *real* fan->wrench allocation and the *real* actuator lag, so any model
-mismatch shows up honestly (today they match; that's a knob for robustness
-testing later).
+This is "ground truth". It's kept independent of the controller's own mixer on
+purpose: the plant carries the real fan->wrench allocation and the real
+actuator lag, so any mismatch between the two would show up honestly. They
+happen to line up today, which is exactly the knob we'd detune for robustness
+testing later.
 
-Integration: semi-implicit Euler at the inner-loop rate. At 400 Hz this is
-stable and low cost; the attitude quaternion uses exact-ish first-order
-integration with renormalization.
+Semi-implicit Euler at the inner-loop rate. 400 Hz is stable and cheap, and
+the quaternion gets first-order integration plus a renormalise each step.
 """
 
 from __future__ import annotations
@@ -21,7 +20,7 @@ from ..core.types import State
 
 
 def build_allocation(params: Params) -> np.ndarray:
-    """Geometry -> 4xN matrix mapping fan thrusts to [T, tau_x, tau_y, tau_z]."""
+    """Fan geometry -> 4xN matrix from fan thrusts to [T, tau_x, tau_y, tau_z]."""
     layout = params.fan_layout
     rx, ry = layout[:, 0], layout[:, 1]
     spin = layout[:, 3]
@@ -42,30 +41,30 @@ class Dynamics:
         self.state = state.copy() if state is not None else State()
         self.wind = wind
         self.wind_world = np.zeros(3)
-        # Actuator state: actual fan thrust lags behind command.
+        # real fan thrust trails the command through a first-order lag
         self.fan_thrust = np.zeros(params.num_fans)
-        # Last linear acceleration in world frame (for sensor synthesis).
+        # keep the last world-frame accel around so the sensors can fake an IMU
         self.accel_world = np.zeros(3)
 
     def step(self, fan_cmd: np.ndarray, dt: float) -> State:
         p = self.p
         s = self.state
 
-        # Actuator lag: exact first-order toward command
+        # first-order actuator lag, exact step toward the command
         alpha = 1.0 - np.exp(-dt / max(p.fan_tau, 1e-6))
         self.fan_thrust += (np.clip(fan_cmd, p.fan_thrust_min, p.fan_thrust_max)
                             - self.fan_thrust) * alpha
         f = self.fan_thrust
 
-        # Resolve wrench from real fan thrusts
+        # wrench produced by the *actual* fan thrusts
         wrench = self.A @ f
         T = float(wrench[0])
         torque_fans = wrench[1:]
 
-        # Forces (world enu)
+        # world-frame forces
         thrust_world = m.quat_rotate(s.quat, np.array([0.0, 0.0, T]))
         gravity = np.array([0.0, 0.0, -p.mass * m.GRAVITY])
-        # Drag acts on AIRSPEED (ground velocity minus wind), not ground speed.
+        # drag bites on airspeed (ground velocity minus wind), not ground speed
         if self.wind is not None:
             self.wind_world = self.wind.sample(dt)
         airspeed_vec = s.vel - self.wind_world
@@ -74,13 +73,13 @@ class Dynamics:
         accel = (thrust_world + gravity + drag) / p.mass
         self.accel_world = accel
 
-        # Torques (body)
+        # body-frame torques (note the gyroscopic term)
         gyro = np.cross(s.omega, self.I * s.omega)
         rot_damp = -p.drag_rot * s.omega
         torque = torque_fans + rot_damp - gyro
         omega_dot = self.I_inv * torque
 
-        # Integrate (semi-implicit)
+        # semi-implicit Euler: vel before pos so it stays stable
         s.vel = s.vel + accel * dt
         s.pos = s.pos + s.vel * dt
         s.omega = s.omega + omega_dot * dt
@@ -91,13 +90,13 @@ class Dynamics:
         return s
 
     def _ground_contact(self) -> None:
-        """Simple non-penetrating ground at z=0 with friction when resting."""
+        """Cheap non-penetrating floor at z=0, with friction once it's resting."""
         s = self.state
         if s.pos[2] < 0.0:
             s.pos[2] = 0.0
             if s.vel[2] < 0.0:
                 s.vel[2] = 0.0
-            # ground friction on horizontal motion + level-out assist
+            # rub off horizontal speed and help it settle flat
             s.vel[0] *= 0.85
             s.vel[1] *= 0.85
             s.omega *= 0.5

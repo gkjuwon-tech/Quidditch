@@ -1,14 +1,13 @@
-"""Battery model: energy drawn as a function of mechanical power demand.
+"""A small battery model: energy out as a function of power demand.
 
-Crude but honest: electrical power = mechanical power / efficiency, where
-mechanical power scales with thrust^1.5 (momentum theory, P ~ T*v_induced and
-v_induced ~ sqrt(T)). Good enough to make "Return To Pit" a real consequence
-of flying hard, which is the whole point for the demo.
+Crude but not dishonest. Electrical power = mechanical / efficiency, and
+mechanical power goes like thrust^1.5 (momentum theory: P ~ T*v_induced,
+v_induced ~ sqrt(T)). That's enough to make Return-To-Pit an actual
+consequence of flying hard, which is all the demo needs.
 """
 
 from __future__ import annotations
 
-from ..core.math3d import GRAVITY
 from ..core.params import Params
 
 
@@ -16,14 +15,13 @@ class Battery:
     def __init__(self, params: Params, initial_soc: float = 1.0):
         self.p = params
         self.energy_wh = params.batt_capacity_wh * initial_soc
-        # Calibrate the power constant so that hovering hits the rated efficiency.
+        # pin the power constant so hover lands exactly on the rated efficiency.
         hover_T = params.hover_thrust
-        # P_hover_electrical (W) implied by batt_hover_eta at hover thrust:
-        # treat hover induced power as T * sqrt(T / (2*rho*A)); fold all the
-        # disc-area/rho constants into one k calibrated at hover.
+        # induced hover power is ~ T*sqrt(T/(2*rho*A)); roll the rho and disc
+        # area into one k and calibrate it at the hover point.
         p_mech_hover = hover_T ** 1.5
         self._k = (hover_T * 9.0) / (params.batt_hover_eta * p_mech_hover)
-        # (the 9.0 sets a ~ few-minute endurance scale for a 2.6 kWh pack)
+        # the 9.0 just sets a few-minute endurance for a 2.6 kWh pack
 
     @property
     def soc(self) -> float:

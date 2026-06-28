@@ -1,6 +1,7 @@
 """NIMBUS-9¾ flight control stack for the manned eVTOL broom.
 
-Public surface kept small on purpose; reach into submodules for internals.
+The public surface is small on purpose -- dig into the submodules when you
+need the internals.
 """
 
 from .core import (

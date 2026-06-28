@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Plot a scenario CSV (optional; needs matplotlib).
+"""Plot a scenario CSV. Optional -- you'll need matplotlib.
 
     python tools/plot.py scenarios/out/battery.csv [--save out.png]
 
-Renders the ground track, altitude, speed, attitude and battery so a scenario
-reads as a picture. Falls back to a clear message if matplotlib isn't present.
+Draws the ground track, altitude, speed, attitude, and battery so a scenario
+reads at a glance. If matplotlib isn't around it just says so and bails.
 """
 
 from __future__ import annotations

@@ -1,8 +1,8 @@
-"""Innermost loop: body-rate -> torque (the thing that actually keeps you alive).
+"""Innermost loop: body rate -> torque. The one that keeps you alive.
 
-Runs at the full inner-loop rate. PID per body axis [roll, pitch, yaw] with
-derivative on the gyro signal. This is the loop Betaflight obsesses over; for
-a 120 kg manned vehicle we trade raw bandwidth for smoothness.
+Full-rate PID, one per body axis [roll, pitch, yaw], D taken off the gyro.
+Betaflight lives and dies on this loop; on a 120 kg manned thing we
+deliberately give up some bandwidth to get smoothness back.
 """
 
 from __future__ import annotations
@@ -24,5 +24,5 @@ class RateController:
 
     def update(self, rate_sp: np.ndarray, omega: np.ndarray, dt: float,
                freeze_i: bool = False) -> np.ndarray:
-        """Return body torque command [tau_x, tau_y, tau_z] (Nm)."""
+        """Body torque command [tau_x, tau_y, tau_z], Nm."""
         return self.pid.update(rate_sp, omega, dt, freeze_i=freeze_i)

@@ -1,12 +1,11 @@
-"""Telemetry: collect per-tick records, dump CSV, and render terminal summaries.
+"""Telemetry: gather per-tick rows, write CSV, print terminal summaries.
 
-No plotting dependency required -- a tiny ASCII sparkline keeps the demo
-legible over SSH. matplotlib (if installed) is used by tools/plot.py instead.
+Deliberately no plotting dependency -- a little ASCII sparkline keeps the demo
+readable over SSH. If you want real plots, tools/plot.py uses matplotlib.
 """
 
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass, field
 
 

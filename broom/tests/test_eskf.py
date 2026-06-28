@@ -1,8 +1,8 @@
-"""Error-state EKF: tight attitude, and robust closed-loop estimation through wind.
+"""Error-state EKF: tight attitude, and solid closed-loop estimation in wind.
 
-These assert the properties that matter, with generous bounds so they pass
-across noise seeds. The headline (EKF ~2 deg / ~5 cm in gusting wind vs the
-complementary filter diverging) is demonstrated in scenarios/run.py.
+These check the properties that actually matter, with loose bounds so they
+hold across noise seeds. The headline number -- EKF ~2 deg / ~5 cm in gusting
+wind, where the complementary filter falls apart -- lives in scenarios/run.py.
 """
 
 import numpy as np
@@ -35,8 +35,8 @@ def test_ekf_attitude_tight_at_hover():
 
 
 def test_fly_on_estimate_through_wind_stays_controlled():
-    """EKF + gravity/mag fusion must keep control flying on the estimate in
-    gusting wind -- the case where the complementary filter diverged."""
+    """EKF + gravity/mag fusion has to keep control flying on the estimate in
+    gusting wind -- exactly where the complementary filter came apart."""
     for seed in range(4):
         wind = Wind(steady=(6.0, -3.0, 0.0), gust_sigma=1.5, gust_tau=1.5, seed=seed)
         sim = Simulator(initial=State(pos=np.array([0.0, 0.0, 0.0])),
@@ -55,8 +55,8 @@ def test_fly_on_estimate_through_wind_stays_controlled():
 
 
 def test_ekf_beats_complementary_attitude_in_wind():
-    """The EKF's attitude estimate should be much tighter than the
-    complementary filter under the same gusty conditions."""
+    """Under the same gusts, the EKF's attitude estimate should be far tighter
+    than the complementary filter's."""
     def final_att_err(estimator):
         wind = Wind(steady=(6.0, -3.0, 0.0), gust_sigma=1.5, gust_tau=1.5, seed=5)
         sim = Simulator(initial=State(pos=np.array([0.0, 0.0, 0.0])),

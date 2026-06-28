@@ -1,8 +1,8 @@
 """The balls: autonomous Quaffle, Bludger, and Golden Snitch.
 
-Guidance/evasion/pursuit on top of acceleration-limited flying agents, with a
-shared no-contact safety layer. The inner flight control that realises a
-commanded acceleration is the broom's proven cascade (nimbus_fc.control).
+Guidance, evasion, and pursuit built on top of accel-limited flying agents,
+all sharing one no-contact safety layer. The inner loop that actually realises
+a commanded acceleration is the broom's own cascade (nimbus_fc.control).
 """
 
 from . import params

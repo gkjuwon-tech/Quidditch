@@ -1,23 +1,24 @@
 #!/usr/bin/env python3
-"""Challenge 4 — keep the form factor, keep the power budget, fly a whole match.
+"""Challenge 4 -- keep the form factor, keep the power budget, fly a whole match.
 
 Battery-only, the broomstick is a ~60 s sprinter (analysis/flight_thermal.py):
-no disc area => ~150 kW hover => 2.6 kWh dies in a minute. You cannot fix that
-with a bigger battery — 30 minutes at 150 kW is ~75 kWh, ~400 kg of cells, which
-does not fit a broom and would not lift.
+no disc area => ~150 kW hover => 2.6 kWh gone in a minute. A bigger battery
+doesn't fix it -- 30 minutes at 150 kW is ~75 kWh, ~400 kg of cells, which won't
+fit on a broom and wouldn't lift anyway.
 
-The honest lever, with form and power both fixed, is ENERGY DENSITY. Liquid fuel
-carries ~12,000 Wh/kg vs ~250 Wh/kg for li-ion (~48x). So go SERIES HYBRID:
-  * a slim micro-turbine GENSET in the shaft burns sustainable aviation fuel and
-    makes the *average* power continuously;
-  * the existing 2600 Wh battery becomes the PEAK BUFFER — it still delivers the
-    full ~150 kW bursts (so peak thrust/power is unchanged), the genset just
-    keeps it topped up.
-Thrust stays 8x360 N. Hover power stays ~150 kW. Only the tank empties.
+With form and power both pinned, the honest lever left is energy density. Liquid
+fuel holds ~12,000 Wh/kg against ~250 Wh/kg for li-ion (~48x). So go series
+hybrid:
+  * a slim micro-turbine genset down the shaft burns sustainable aviation fuel
+    and makes the average power continuously;
+  * the existing 2600 Wh battery becomes the peak buffer -- it still delivers the
+    full ~150 kW bursts (peak thrust/power is unchanged), the genset just keeps
+    it topped up.
+Thrust stays 8x360 N. Hover power stays ~150 kW. Only the tank drains.
 
-Cost, stated honestly: the genset + fuel add mass, which raises hover power
-(P ~ W^1.5), which burns more fuel. This script closes that loop and reports the
-real match endurance.
+The honest cost: genset + fuel add mass, which raises hover power (P ~ W^1.5),
+which burns more fuel. This script closes that loop and reports the real match
+endurance.
 
     python3 analysis/endurance_match.py
 """
@@ -26,13 +27,13 @@ from __future__ import annotations
 import csv
 import os
 
-# Battery-only baseline (from analysis/flight_thermal.py)
+# battery-only baseline (from analysis/flight_thermal.py)
 M_BASE       = 120.0      # kg all-up, battery-only
 P_HOVER_BASE = 153.3      # kW electrical draw at hover, base mass
 THRUST_AVAIL = 8 * 360.0  # N, unchanged (params.fan_thrust_max x num_fans)
 G            = 9.81
 
-# Series-hybrid powertrain
+# series-hybrid powertrain
 SAF_WH_KG       = 11900.0   # sustainable aviation fuel specific energy (Wh/kg)
 ETA_GENSET      = 0.30      # fuel -> electrical (micro-turbine + generator)
 GENSET_KW_PER_KG = 4.2      # micro-turbine genset power density
@@ -52,8 +53,8 @@ def hover_draw_kw(mass_kg: float) -> float:
 
 
 def main() -> int:
-    # fixed-point: genset is sized to average power, which depends on total
-    # mass, which depends on genset mass. Converge it.
+    # fixed point: the genset is sized to average power, which depends on total
+    # mass, which depends on the genset mass -- so iterate until it settles
     genset_kg = 18.0
     for _ in range(50):
         m_hybrid = M_BASE + genset_kg + FUEL_KG + FUEL_KG * TANK_FRAC
@@ -78,17 +79,17 @@ def main() -> int:
     base_min = (2600.0 / 1000.0) / (DUTY * P_HOVER_BASE) * 60.0
 
     print("=" * 68)
-    print(" NIMBUS-9¾ BROOM — MATCH ENDURANCE (series-hybrid range extender)")
+    print(" NIMBUS-9¾ BROOM -- MATCH ENDURANCE (series-hybrid range extender)")
     print(" keep the form, keep the power, fill a whole match")
     print("=" * 68)
     print("\n[baseline] battery-only (2600 Wh)")
-    print(f"    match-profile flight .. {base_min*60:7.0f} s   ({base_min:.1f} min) — a sprinter")
+    print(f"    match-profile flight .. {base_min*60:7.0f} s   ({base_min:.1f} min) -- a sprinter")
 
     print("\n[hybrid] micro-turbine genset + SAF, battery as peak buffer")
     print(f"    fuel carried .......... {FUEL_KG:7.1f} kg   sustainable aviation fuel")
     print(f"    usable electrical ..... {elec_wh/1000:7.1f} kWh  (= fuel x {SAF_WH_KG/1000:.1f} kWh/kg x {ETA_GENSET:.2f})")
     print(f"    genset (sized to avg) . {genset_kg:7.1f} kg / {p_avg:.0f} kW continuous")
-    print(f"    peak power (buffer) ... {p_peak:7.0f} kW   unchanged — full hover bursts")
+    print(f"    peak power (buffer) ... {p_peak:7.0f} kW   unchanged -- full hover bursts")
     print(f"    all-up mass ........... {m_hybrid:7.1f} kg   ({M_BASE:.0f} + genset + fuel + tank)")
     print(f"    thrust-to-weight ...... {tw:7.2f}      hover at {100/tw:.0f}% of max thrust")
     print(f"    >> MATCH FLIGHT TIME .. {match_min:7.1f} min")

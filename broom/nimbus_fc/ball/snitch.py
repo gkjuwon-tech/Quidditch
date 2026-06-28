@@ -1,9 +1,10 @@
-"""Golden Snitch evasion behavior.
+"""How the Golden Snitch runs away.
 
-The snitch flees predicted hand positions, adds a tangential feint near the
-closest threat, and keeps a small boundary repulsion term so it cannot be pinned
-against the pitch limits. Capture requires a hand to remain inside the capture
-radius for the configured dwell time."""
+It flees the *predicted* hand positions (not the players themselves), throws
+in a sideways feint when the nearest threat gets close, and carries a little
+wall-repulsion term so it can't be pinned against the pitch edge. To actually
+catch it, a hand has to stay inside capture_radius for the full dwell time.
+"""
 
 from __future__ import annotations
 
@@ -23,7 +24,7 @@ class SnitchEvasion:
         self.feint_period = e["feint_period"]
         self.fatigue_tau = e["fatigue_tau"]
         self.fatigue_floor = e["fatigue_floor"]
-        self._dwell = 0.0          # how long a hand has been within capture range
+        self._dwell = 0.0          # time a hand has stayed inside capture range
         self.t = 0.0
 
     def update(self, world, ball, dt):
@@ -37,7 +38,7 @@ class SnitchEvasion:
         threat_dir = np.zeros(3)
 
         for pl in world.players:
-            # Predict the hand position, not just the player center.
+            # aim at where the hand will be, not where the player is now
             t_pred = 0.18
             p_future = pl.pos + pl.vel * t_pred
             to_snitch = pos - p_future
@@ -53,7 +54,7 @@ class SnitchEvasion:
                 w = (self.danger - d) / self.danger
                 flee += (d_vec / max(d, 1e-6)) * (w * w) * self.p.max_speed
 
-            # Capture is based on the current hand position.
+            # capture, though, is judged on the hand's *current* position
             hand_now = pl.hand_toward(pos)
             if float(np.linalg.norm(pos - hand_now)) < self.capture_radius:
                 self._dwell += dt
@@ -64,15 +65,16 @@ class SnitchEvasion:
                     return np.zeros(3)
                 break
         else:
-            self._dwell = max(0.0, self._dwell - dt)  # decay if no hand close
+            self._dwell = max(0.0, self._dwell - dt)  # nobody close -> let it decay
 
-        # Add a side-step near the closest threat; flip sign to avoid a fixed orbit.
+        # side-step the closest threat, flipping sign over time so it doesn't
+        # settle into a predictable orbit
         if nearest_d < self.danger:
             tang = np.cross(threat_dir, np.array([0.0, 0.0, 1.0]))
             tn = float(np.linalg.norm(tang))
             if tn > 1e-6:
                 tang /= tn
-                # Prefer the side-step that keeps the ball away from the wall.
+                # take whichever side-step steers it back toward open space
                 to_center = -pos.copy()
                 to_center[2] = 0.0
                 if np.dot(tang, to_center) < 0:
@@ -81,7 +83,7 @@ class SnitchEvasion:
                 w = (self.danger - nearest_d) / self.danger
                 flee += tang * sign * self.juke_gain * w * self.p.max_speed
 
-        # If horizontal escape is blocked, spend the maneuver vertically.
+        # boxed in horizontally? then burn the escape vertically instead
         if nearest_d < 1.5 and np.linalg.norm(flee[:2]) < 0.4 * self.p.max_speed:
             up = world.hi[2] - pos[2]
             down = pos[2] - world.lo[2]
@@ -89,7 +91,7 @@ class SnitchEvasion:
 
         flee += self._wall_repulsion(world, pos)
 
-        # With no pressure, keep a slow drift instead of parking in place.
+        # nothing chasing it: keep a lazy drift rather than parking dead still
         if nearest_d >= self.danger and np.linalg.norm(flee) < 1e-3:
             flee = 0.5 * self.p.max_speed * np.array([
                 np.cos(0.4 * self.t), np.sin(0.3 * self.t), 0.2 * np.sin(0.5 * self.t)])

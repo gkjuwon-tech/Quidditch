@@ -6,9 +6,10 @@
     python scenarios/match.py kill      # master emergency stop
     python scenarios/match.py all
 
-The players here are NOT scripted points -- each is a 6-DOF broom flown by the
-full flight stack (commander + geofence + fly-by-intent + control cascade). The
-Dementor keeps brooms from colliding and owns the rulebook. dt = 2.5 ms (400 Hz).
+The players here aren't scripted points -- each one is a 6-DOF broom flown by
+the whole flight stack (commander + geofence + fly-by-intent + control
+cascade). The Dementor keeps the brooms apart and owns the rulebook.
+dt = 2.5 ms (400 Hz).
 """
 
 from __future__ import annotations
@@ -31,8 +32,8 @@ from nimbus_fc.match.dementor import Dementor  # noqa: E402
 from nimbus_fc.match.policies import chase_ball, guard_hoops, patrol  # noqa: E402
 
 DT = 0.0025
-# When True, every broom flies on its own onboard EKF (noisy IMU+GNSS+mag)
-# instead of truth state. Set by --ekf. EKF runs decimated to 100 Hz.
+# when True every broom flies on its own onboard EKF (noisy IMU+GNSS+mag)
+# rather than truth state; set via --ekf. the EKF itself runs decimated to 100 Hz.
 _EKF = False
 
 
@@ -41,7 +42,7 @@ def _src():
 
 
 def _match_snitch():
-    """A snitch with a match-length fatigue handicap so the game can end."""
+    """A snitch handicapped with match-length fatigue, so the game can actually end."""
     sp = params.snitch()
     sp.extra["fatigue_tau"] = 25.0
     sp.extra["fatigue_floor"] = 0.40
@@ -87,7 +88,7 @@ def scn_seek():
     for i in range(2):
         a = np.pi * i + 0.3
         w.players.append(BroomAgent(i, [30 * np.cos(a), 18 * np.sin(a), 10],
-                                    chase_ball(snitch), params=Params(), state_source=_src(), ekf_div=4,reach=1.4))
+                                    chase_ball(snitch), params=Params(), state_source=_src(), ekf_div=4, reach=1.4))
     dem = Dementor(broom_sep=3.0, margin=2.0).attach(w)
     mb, msep = np.inf, np.inf
     for _ in range(int(60.0 / DT)):
@@ -117,12 +118,12 @@ def scn_match():
     for i in range(2):
         a = np.pi * i + 0.3
         w.players.append(BroomAgent(i, [28 * np.cos(a), 16 * np.sin(a), 10],
-                                    chase_ball(snitch), params=Params(), state_source=_src(), ekf_div=4,reach=1.4))
-    # a chaser going for the quaffle, and a keeper guarding the hoops
+                                    chase_ball(snitch), params=Params(), state_source=_src(), ekf_div=4, reach=1.4))
+    # one chaser on the quaffle, one keeper minding the hoops
     w.players.append(BroomAgent(2, [-14, 0, 10], chase_ball(quaffle),
-                                params=Params(), state_source=_src(), ekf_div=4,reach=1.0))
+                                params=Params(), state_source=_src(), ekf_div=4, reach=1.0))
     w.players.append(BroomAgent(3, [40, 0, 12], guard_hoops(w.hoops, quaffle),
-                                params=Params(), state_source=_src(), ekf_div=4,reach=1.0))
+                                params=Params(), state_source=_src(), ekf_div=4, reach=1.0))
     dem = Dementor(broom_sep=3.0, margin=2.0).attach(w)
     mb, msep = np.inf, np.inf
     for _ in range(int(50.0 / DT)):
@@ -146,7 +147,7 @@ def scn_kill():
     for i in range(3):
         a = 2 * np.pi * i / 3
         w.players.append(BroomAgent(i, [20 * np.cos(a), 12 * np.sin(a), 11],
-                                    patrol([0, 0, 11]), params=Params(), state_source=_src(), ekf_div=4,reach=1.2))
+                                    patrol([0, 0, 11]), params=Params(), state_source=_src(), ekf_div=4, reach=1.2))
     dem = Dementor().attach(w)
     for _ in range(int(4.0 / DT)):
         w.step(DT)
@@ -155,7 +156,7 @@ def scn_kill():
     for _ in range(int(8.0 / DT)):
         w.step(DT)
     alt_after = np.mean([p.pos[2] for p in w.players])
-    print(f"    KILL pressed at t=4.0s")
+    print("    KILL pressed at t=4.0s")
     print(f"  mean broom altitude: {alt_before:.1f} m -> {alt_after:.1f} m "
           f"(all descending under control)")
     for t, m_ in dem.log:

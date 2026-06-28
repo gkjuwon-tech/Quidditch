@@ -1,8 +1,8 @@
-"""Match layer: flight-controller-backed players + the Dementor central referee.
+"""Match layer: FC-flown players plus the Dementor referee.
 
-Brings the two halves together -- the manned-broom flight stack
-(nimbus_fc.fc) and the autonomous balls (nimbus_fc.ball) -- into one refereed
-arena.
+This is where the two halves meet -- the manned-broom flight stack
+(nimbus_fc.fc) and the autonomous balls (nimbus_fc.ball) -- inside one
+refereed arena.
 """
 
 from . import policies

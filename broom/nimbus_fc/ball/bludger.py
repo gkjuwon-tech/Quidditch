@@ -1,18 +1,17 @@
-"""Bludger: aggressive pursuit whose "hit" is a proximity tag, not a collision.
+"""Bludger: aggressive pursuit where a "hit" is a proximity tag, not a crash.
 
-The original is a cast-iron ball that cracks skulls. Ours threatens exactly as
-hard, and hurts exactly nobody:
+The canonical Bludger is a cast-iron ball that cracks skulls. Ours looks every
+bit as menacing and injures precisely no one:
 
-  HUNT    -> pick a target (nearest eligible player) and fly a lead-pursuit
-             intercept toward where they'll be.
-  TAG     -> on reaching tag_radius (~1 m) it registers a HIT in software and
-             immediately backs off. Because tag_radius is *outside* the
-             no-contact safety floor, the shell never has to reach the person.
-  RETREAT -> peel away for a cooldown so it never lingers/collides, then HUNT.
+  HUNT    -> lock the nearest eligible player and fly a lead-pursuit intercept
+             toward where they're going to be.
+  TAG     -> once inside tag_radius (~1 m) it logs a hit in software and peels
+             off straight away. tag_radius lives *outside* the no-contact
+             floor, so the shell never actually has to reach the person.
+  RETREAT -> back away for a cooldown so it never loiters or piles in, then HUNT.
 
-A bat swing inside bat_radius deflects it (it "gets hit back"). The
-no-contact avoidance layer underneath makes the contact-free property a hard
-guarantee, not a hope.
+A bat swing inside bat_radius knocks it back. With the no-contact layer sitting
+underneath all of this, contact-free is a guarantee rather than a wish.
 """
 
 from __future__ import annotations
@@ -50,7 +49,7 @@ class BludgerPursuit:
 
         target = self._select_target(world, body)
         if target is None:
-            return -body.vel  # nothing to chase: coast to a stop
+            return -body.vel  # no one left to chase, so coast down
 
         # bat deflection: a player swinging within bat_radius knocks it away
         bat = target.hand_toward(body.pos)
@@ -61,7 +60,7 @@ class BludgerPursuit:
                             f"at t={world.t:.2f}s")
             return self._retreat_dir * self.p.max_speed
 
-        # tag: close enough to count as a hit (no actual contact needed)
+        # tag: near enough to score a hit, no real contact required
         d = float(np.linalg.norm(body.pos - target.pos))
         if d < self.tag_radius:
             self.hits[target.id] = self.hits.get(target.id, 0) + 1
@@ -70,18 +69,17 @@ class BludgerPursuit:
             self._begin_retreat(world, body, target.pos, "tagged")
             return self._retreat_dir * self.p.max_speed
 
-        # Lead-pursuit intercept, but the lead fades as we close in so the
-        # endgame is a direct homing onto the player (not a chase of the
-        # tangent point, which just tails a turning target forever).
+        # lead-pursuit intercept, but bleed the lead out as we close so the
+        # endgame homes straight onto the player. chasing the tangent point
+        # instead just tails a turning target forever.
         lead = self.lead_gain * min(1.0, d / 8.0)
         aim = target.pos + target.vel * lead
         v = aim - body.pos
         n = float(np.linalg.norm(v))
         if n <= 1e-6:
             return np.zeros(3)
-        # Decelerate into the tag so it arrives slow and taps (no high-speed
-        # overshoot through the safety floor). Darts in fast from range, eases
-        # in for the last metre.
+        # ease off into the tag so it arrives slow and taps instead of blowing
+        # through the safety floor: quick dart from range, soft for the last metre
         speed = min(self.p.max_speed, max(10.0, 8.0 * (d - self.tag_radius)))
         return v / n * speed
 

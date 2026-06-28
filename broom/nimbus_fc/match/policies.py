@@ -1,7 +1,7 @@
-"""Rider-AIs for broom-flown players: world state -> desired WORLD velocity.
+"""Rider brains for broom-flown players: world state -> desired world velocity.
 
-These are the 'what do I want to do' brains; BroomAgent turns the desired
-velocity into stick intent and lets the flight stack actually fly it.
+These answer "what do I want to do". BroomAgent takes that velocity, converts
+it to stick intent, and lets the real flight stack go fly it.
 """
 
 from __future__ import annotations
@@ -10,7 +10,7 @@ import numpy as np
 
 
 def chase_ball(ball, lead: float = 0.3, gain: float = 1.2):
-    """Seeker: fly toward where the ball will be."""
+    """Seeker: head for where the ball is about to be."""
     def ai(world, me):
         if not ball.active:
             return np.zeros(3)
@@ -21,7 +21,7 @@ def chase_ball(ball, lead: float = 0.3, gain: float = 1.2):
 
 def patrol(center, radius: float = 16.0, height: float = 9.0,
            omega: float = 0.4, gain: float = 1.0):
-    """Fly a steady circuit around the pitch."""
+    """Just fly a steady loop around the pitch."""
     c = np.asarray(center, float)
 
     def ai(world, me):
@@ -33,7 +33,7 @@ def patrol(center, radius: float = 16.0, height: float = 9.0,
 
 
 def guard_hoops(hoops, ball, gain: float = 1.2):
-    """Keeper: sit between the quaffle and the hoops it threatens."""
+    """Keeper: park between the quaffle and the hoops it's threatening."""
     centers = np.array([h[0] for h in hoops])
     mid = centers.mean(axis=0)
 

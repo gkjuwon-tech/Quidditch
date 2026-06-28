@@ -1,18 +1,18 @@
-"""The Dementor -- central match supervisor.
+"""The Dementor: the match supervisor that sees the whole field.
 
-It does two jobs the individual agents can't do for themselves:
+It handles the two things no single agent can do on its own:
 
-  1. DECONFLICTION. Broom-flown players have no inter-broom avoidance of their
-     own (each only knows its geofence and the balls avoid people). The
-     Dementor adds a symmetric separation push between brooms so two players
-     diving for the same snitch never collide.
+  1. Deconfliction. Broom-flown players don't avoid *each other* -- each one
+     only knows its own geofence, and the balls dodge people, not brooms. So
+     the Dementor puts a symmetric separation push between brooms, and two
+     players diving for the same snitch never actually collide.
 
-  2. JUDGEMENT. It owns the rulebook and the scoreboard: a Bludger tag sends a
-     player off for a penalty; a Quaffle through a hoop scores; catching the
-     Snitch is +150 and ends the match. A master kill makes everyone descend.
+  2. Judgement. It owns the rulebook and the scoreboard. A Bludger tag sends a
+     player to the box; a Quaffle through a hoop scores; catching the Snitch is
+     +150 and ends the match. A master kill sends everyone down.
 
-It is named after the thing in the books that watches everything and ends
-games -- which is exactly what a central safety/scoring server does.
+Named after the thing in the books that watches everything and ends games,
+which is more or less what a central safety/scoring server does.
 """
 
 from __future__ import annotations
@@ -44,14 +44,14 @@ class Dementor:
         return hasattr(agent, "rider_ai")
 
     def override_for(self, world, agent):
-        """Deconflicted velocity for a broom-flown player (None for kinematic)."""
+        """Deconflicted velocity for a broom-flown player; None for a kinematic one."""
         if not self._is_broom(agent):
             return None
         if self.killed:
-            return np.array([0.0, 0.0, -1.0])      # master kill: controlled descent
+            return np.array([0.0, 0.0, -1.0])      # master kill -> controlled descent
 
-        # base intent: serve a penalty (idle) or chase -- but deconfliction is
-        # added either way, so penalised craft still never collide.
+        # start from either a penalty idle or the chase, then add the
+        # separation push on top so even sidelined craft stay clear
         if getattr(agent, "tagged_out", False) and world.t < agent._penalty_until:
             v = np.array([0.0, 0.0, -0.3])
         else:
@@ -65,7 +65,7 @@ class Dementor:
             dist = float(np.linalg.norm(d))
             if 1e-6 < dist < thresh:
                 n = d / dist
-                # symmetric separation push, ramps up as they close
+                # push them apart harder the closer they get
                 v = v + n * ((thresh - dist) / self.margin) * agent.p.max_speed_xy
         return v
 
@@ -97,7 +97,7 @@ class Dementor:
                 self._log(world, f"SNITCH CAUGHT  +{self.snitch_points}  -> GAME OVER")
 
     def kill(self, world) -> None:
-        """Master emergency stop: everyone descends gently, match ends."""
+        """Master estop: everyone eases down and the match is over."""
         self.killed = True
         self.game_over = True
         self._log(world, "MASTER KILL -- all craft to controlled descent")

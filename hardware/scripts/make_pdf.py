@@ -371,7 +371,7 @@ def main():
             sheet(pdf, part)
         fleet_sheet(pdf)
     print(f"wrote {combined}")
-    print(f"wrote bom/SUMMARY.csv")
+    print("wrote bom/SUMMARY.csv")
 
 
 if __name__ == "__main__":

@@ -1,14 +1,12 @@
-"""3D math primitives: vectors, quaternions, rotations.
+"""Vectors, quaternions and rotations.
 
-Conventions (locked across the whole stack):
-  - World frame: ENU. x=East, y=North, z=Up. Gravity points to -z.
-  - Quaternion q = [w, x, y, z], unit norm, rotates body -> world:
-        v_world = q (x) v_body (x) q^-1
-  - Body frame: x=forward, y=left, z=up. Lift/thrust acts along +body z.
+Frame conventions are fixed everywhere in the stack:
+    world is ENU (x east, y north, z up), gravity along -z
+    body is x-fwd, y-left, z-up, thrust along +z_body
+    q = [w, x, y, z], unit norm, maps body into world.
 
-Benchmarked against the quaternion conventions used in PX4 (px4_msgs) and
-the Crazyflie firmware estimator. We deliberately avoid scipy so the whole
-project runs on numpy alone.
+Same quaternion layout PX4 and the Crazyflie estimator use. numpy only on
+purpose, scipy is a heavy dep we don't want to drag around.
 """
 
 from __future__ import annotations
@@ -19,7 +17,6 @@ GRAVITY = 9.80665  # m/s^2
 EPS = 1e-9
 
 
-# Vectors
 def vec3(x: float = 0.0, y: float = 0.0, z: float = 0.0) -> np.ndarray:
     return np.array([x, y, z], dtype=float)
 
@@ -40,7 +37,6 @@ def clamp_norm(v: np.ndarray, max_norm: float) -> np.ndarray:
     return v
 
 
-# Quaternions  (q = [w, x, y, z])
 def quat_identity() -> np.ndarray:
     return np.array([1.0, 0.0, 0.0, 0.0])
 
@@ -50,12 +46,12 @@ def quat_normalize(q: np.ndarray) -> np.ndarray:
     if n < EPS:
         return quat_identity()
     q = q / n
-    # Keep a canonical hemisphere (w >= 0) to avoid double-cover sign flips.
+    # pin to the w>=0 hemisphere so the double cover doesn't flip signs on us
     return -q if q[0] < 0.0 else q
 
 
 def quat_mul(a: np.ndarray, b: np.ndarray) -> np.ndarray:
-    """Hamilton product a (x) b."""
+    """Hamilton product a*b."""
     aw, ax, ay, az = a
     bw, bx, by, bz = b
     return np.array([
@@ -71,18 +67,18 @@ def quat_conj(q: np.ndarray) -> np.ndarray:
 
 
 def quat_rotate(q: np.ndarray, v: np.ndarray) -> np.ndarray:
-    """Rotate vector v (body) into world: q (x) [0,v] (x) q^-1."""
+    """Rotate a body vector into world (q * [0,v] * q^-1)."""
     qv = np.array([0.0, v[0], v[1], v[2]])
     return quat_mul(quat_mul(q, qv), quat_conj(q))[1:]
 
 
 def quat_rotate_inv(q: np.ndarray, v: np.ndarray) -> np.ndarray:
-    """Rotate vector v (world) into body."""
+    """World vector back into the body frame."""
     return quat_rotate(quat_conj(q), v)
 
 
 def quat_to_rotmat(q: np.ndarray) -> np.ndarray:
-    """Body->world rotation matrix R, columns are body axes in world."""
+    """Body->world rotation matrix; its columns are the body axes in world."""
     w, x, y, z = q
     return np.array([
         [1 - 2 * (y * y + z * z), 2 * (x * y - w * z),     2 * (x * z + w * y)],
@@ -92,7 +88,10 @@ def quat_to_rotmat(q: np.ndarray) -> np.ndarray:
 
 
 def rotmat_to_quat(R: np.ndarray) -> np.ndarray:
-    """Convert a proper rotation matrix to a unit quaternion (Shepperd's method)."""
+    """Proper rotation matrix -> unit quaternion, via Shepperd.
+
+    Picks the largest-diagonal branch first for numerical conditioning.
+    """
     tr = R[0, 0] + R[1, 1] + R[2, 2]
     if tr > 0.0:
         s = np.sqrt(tr + 1.0) * 2.0
@@ -135,7 +134,7 @@ def quat_from_euler(roll: float, pitch: float, yaw: float) -> np.ndarray:
 
 
 def quat_to_euler(q: np.ndarray) -> np.ndarray:
-    """Return [roll, pitch, yaw] (rad), ZYX. Gimbal-safe-ish via clamping."""
+    """[roll, pitch, yaw] in rad, ZYX. pitch is clamped so asin won't blow up."""
     w, x, y, z = q
     sinr_cosp = 2 * (w * x + y * z)
     cosr_cosp = 1 - 2 * (x * x + y * y)
@@ -149,20 +148,19 @@ def quat_to_euler(q: np.ndarray) -> np.ndarray:
 
 
 def quat_integrate(q: np.ndarray, omega_body: np.ndarray, dt: float) -> np.ndarray:
-    """Integrate attitude given body angular rate. q_dot = 0.5 q (x) [0, w]."""
+    """March attitude forward one step from a body rate (qdot = 0.5*q*[0,w])."""
     qw = np.array([0.0, omega_body[0], omega_body[1], omega_body[2]])
     qdot = 0.5 * quat_mul(q, qw)
     return quat_normalize(q + qdot * dt)
 
 
 def quat_error_angle_axis(q_cur: np.ndarray, q_des: np.ndarray) -> np.ndarray:
-    """Small-signal attitude error as a rotation vector in the BODY frame.
+    """Attitude error as a body-frame rotation vector (~2*vec(q_err)).
 
-    Returns ~ 2 * vec(q_err) where q_err = q_cur^-1 (x) q_des. This is the
-    classic PX4 attitude error used to drive the rate setpoint.
+    q_err = q_cur^-1 * q_des. Same quantity PX4 feeds into the rate loop.
     """
     q_err = quat_mul(quat_conj(q_cur), q_des)
-    if q_err[0] < 0.0:  # shortest path
+    if q_err[0] < 0.0:  # take the short way round
         q_err = -q_err
     return 2.0 * q_err[1:]
 

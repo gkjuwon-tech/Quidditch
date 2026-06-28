@@ -8,9 +8,9 @@
     python scenarios/balls.py match      # all three + players, safety report
     python scenarios/balls.py all
 
-Every scenario reports the events and the one number that matters most: the
-minimum padded-shell clearance to any person (a ball must never drive into a
-player). dt = 6 ms.
+Each one prints the events plus the single number that actually matters: the
+smallest padded-shell clearance to any person. A ball must never drive into a
+player. dt = 6 ms throughout.
 """
 
 from __future__ import annotations
@@ -128,7 +128,7 @@ def scn_match():
     w = World()
     w.hoops = _hoops()
     rng = np.random.default_rng(0)
-    # players holding patrol patterns on scripted loops
+    # players just flying scripted patrol loops
     for i in range(4):
         a = 2 * np.pi * i / 4
         pl = Player(i, [20 * np.cos(a), 12 * np.sin(a), 9], max_speed=12, reach=0.9)
