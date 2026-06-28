@@ -49,6 +49,81 @@ float snoise(vec3 v){
 }
 `;
 
+// ---------- SUNSET SKY DOME ----------
+// Rendered on the inside of a large sphere. Physically-inspired gradient:
+// deep zenith -> warm horizon band -> dark ground, plus a sun disk + glow
+// and faint drifting high cloud streaks. Everything procedural.
+export const skyVert = /* glsl */ `
+varying vec3 vDir;
+void main(){
+  vDir = position;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}
+`;
+
+export const skyFrag = /* glsl */ `
+precision highp float;
+varying vec3 vDir;
+uniform float uTime;
+uniform vec3 uSunDir;
+uniform vec3 uZenith;
+uniform vec3 uHorizon;
+uniform vec3 uGround;
+uniform vec3 uSun;
+${SIMPLEX_NOISE}
+
+float fbm(vec3 p){
+  float v = 0.0, a = 0.5;
+  for(int i=0;i<5;i++){ v += a*snoise(p); p *= 2.02; a *= 0.5; }
+  return v;
+}
+
+void main(){
+  vec3 dir = normalize(vDir);
+  float h = dir.y;
+  float mu = max(dot(dir, normalize(uSunDir)), 0.0);
+
+  // base vertical gradient with an extra-bright band hugging the horizon, so
+  // the sky reads like real dusk: pale-gold low, deepening to violet up top.
+  float up = clamp(h, 0.0, 1.0);
+  vec3 highSky = mix(uHorizon, uZenith, pow(up, 0.5));
+  // warm low-sky glow concentrated towards the sun's azimuth
+  float lowGlow = exp(-up * 4.5);
+  vec3 lowSky = mix(highSky, uSun * 1.1 + uHorizon * 0.45, lowGlow * (0.62 + 0.38 * pow(mu, 0.8)));
+  vec3 sky = mix(highSky, lowSky, lowGlow);
+  vec3 grd = mix(uHorizon, uGround, clamp(-h * 1.7, 0.0, 1.0));
+  vec3 col = mix(grd, sky, smoothstep(-0.05, 0.05, h));
+
+  // sun glow + disk (multi-falloff for a soft, photographic bloom)
+  float glow = pow(mu, 3.0) * 0.16 + pow(mu, 12.0) * 0.5 + pow(mu, 220.0) * 1.7;
+  col += uSun * glow;
+  float disk = smoothstep(0.9991, 0.99955, mu);
+  col += uSun * disk * 5.0;
+
+  // warm scatter spreading along the horizon away from the sun
+  float horizonBand = exp(-abs(h) * 7.0);
+  col += uSun * horizonBand * 0.16 * (0.4 + 0.6 * pow(mu, 2.0));
+
+  // two cloud layers: soft fluffy banks low down + thin high streaks. Their
+  // undersides catch the sun, so clouds near the sun glow orange.
+  vec2 cuv = dir.xz / max(0.12, abs(h) + 0.08);
+  float low = fbm(vec3(cuv * 1.1 + vec2(uTime * 0.01, 0.0), uTime * 0.006));
+  float high = fbm(vec3(cuv * 3.0 + vec2(uTime * 0.02, 1.7), uTime * 0.01));
+  float lowBand = smoothstep(0.0, 0.12, h) * (1.0 - smoothstep(0.12, 0.5, h));
+  float highBand = smoothstep(0.12, 0.32, h) * (1.0 - smoothstep(0.34, 0.78, h));
+  float lowMask = smoothstep(0.35, 0.95, low) * lowBand;
+  float highMask = smoothstep(0.45, 0.95, high) * highBand;
+  vec3 litCloud = mix(uZenith * 0.6 + vec3(0.04), uSun * 1.3 + vec3(0.05), pow(mu, 1.5));
+  col = mix(col, litCloud, lowMask * 0.85);
+  col = mix(col, litCloud * 1.05, highMask * 0.5);
+
+  // subtle film grain to break up banding (cheap, looks less "CG smooth")
+  col += (fract(sin(dot(dir.xy, vec2(12.99,78.23))) * 43758.5) - 0.5) * 0.012;
+
+  gl_FragColor = vec4(col, 1.0);
+}
+`;
+
 // Atmospheric mist drifting in front of the ridge.
 export const atmosphereVert = /* glsl */ `
 varying vec2 vUv;
@@ -78,14 +153,15 @@ float fbm(vec3 p){
 
 void main(){
   vec2 uv = vUv;
-  float t = uTime * 0.025;
-  float n = fbm(vec3(uv * 2.4 + vec2(t, t * 0.3), t * 0.6));
-  n = 0.5 + 0.5 * n;
-  // mist sits low and feathers upward
-  float band = smoothstep(0.0, 0.55, uv.y) * (1.0 - smoothstep(0.45, 1.0, uv.y));
-  float density = pow(n, 1.8) * band;
-  // soft horizontal edges
-  density *= smoothstep(0.0, 0.18, uv.x) * (1.0 - smoothstep(0.82, 1.0, uv.x));
+  float t = uTime * 0.02;
+  // two drifting noise layers at different scales/speeds make the haze look
+  // billowy and alive instead of a flat, even wash.
+  float n1 = fbm(vec3(uv * vec2(4.0, 2.2) + vec2(t, 0.0), t * 0.5));
+  float n2 = fbm(vec3(uv * vec2(9.0, 4.0) - vec2(t * 1.6, 0.0), t * 0.9 + 5.0));
+  float n = 0.5 + 0.5 * (n1 * 0.65 + n2 * 0.35);
+  // densest low, thinning and tearing into wisps as it rises
+  float band = smoothstep(0.0, 0.25, uv.y) * (1.0 - smoothstep(0.3, 1.0, uv.y));
+  float density = pow(n, 2.3) * band;
   gl_FragColor = vec4(uColor, density * uOpacity);
 }
 `;
