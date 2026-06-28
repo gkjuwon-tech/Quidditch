@@ -4,6 +4,7 @@ import { useScroll } from "@react-three/drei";
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
 import * as THREE from "three";
 import Sky from "./Sky";
+import Env from "./Environment";
 import Mountains from "./Mountains";
 import Mist from "./Mist";
 import Broom from "./Broom";
@@ -14,21 +15,47 @@ import { SUN_DIR } from "./scene";
 // Scroll drives the camera. Through the hero (offset < ~0.12) it stays head-on
 // so the wordmark never appears to rotate; only a slow dolly-in. Past the hero
 // it sweeps ~270° around the broom while dollying and rising with scroll.
+// Reference framing is authored for a wide desktop viewport. On narrower /
+// portrait screens we widen the (vertical) FOV and dolly the camera back so the
+// broom + wordmark keep the SAME composition they have on a PC — the mobile
+// view reads like the desktop one instead of cropping into the broom.
+const REF_ASPECT = 1.6;
+const BASE_FOV = 42;
+
 function CameraRig() {
   const scroll = useScroll();
-  const { camera, pointer } = useThree();
+  const { camera, pointer, size } = useThree();
   const desired = useRef(new THREE.Vector3());
   const target = useRef(new THREE.Vector3());
+  const lastFov = useRef(0);
 
   useFrame((_state, dt) => {
     const o = scroll.offset;
     const orbitT = THREE.MathUtils.smoothstep(o, 0.12, 1.0);
 
+    const aspect = size.width / Math.max(1, size.height);
+    // keep horizontal coverage ~constant: as the viewport narrows, open up the
+    // vertical FOV (capped so it never fisheyes) and pull back a touch.
+    const cam = camera as THREE.PerspectiveCamera;
+    const fov = THREE.MathUtils.clamp(
+      THREE.MathUtils.radToDeg(
+        2 * Math.atan((Math.tan(THREE.MathUtils.degToRad(BASE_FOV) / 2) * REF_ASPECT) / Math.max(aspect, 0.4)),
+      ),
+      BASE_FOV,
+      74,
+    );
+    if (Math.abs(fov - lastFov.current) > 0.01) {
+      cam.fov = fov;
+      cam.updateProjectionMatrix();
+      lastFov.current = fov;
+    }
+    const pull = THREE.MathUtils.clamp(Math.sqrt(REF_ASPECT / Math.max(aspect, 0.4)), 1, 1.7);
+
     // gentle sway that keeps the camera on the sun-facing side, so the sunset
     // sky and the back-lit, rim-lit ridgeline stay in frame the whole way down
     // (orbiting all the way round would swing into the dark anti-sun side).
     const az = -0.22 + orbitT * 1.15;
-    const radius = 9.4 - Math.sin(orbitT * Math.PI) * 2.8;
+    const radius = (9.4 - Math.sin(orbitT * Math.PI) * 2.8) * pull;
     const height = 1.5 + o * 3.4;
 
     desired.current.set(Math.sin(az) * radius, height, Math.cos(az) * radius);
@@ -82,6 +109,7 @@ export default function Experience() {
     <>
       <CameraRig />
       <Sky />
+      <Env />
 
       {/* golden-hour lighting */}
       <hemisphereLight args={["#ffd9b0", "#2a2030", 0.95]} />

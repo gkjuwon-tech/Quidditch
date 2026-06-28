@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import * as THREE from "three";
 import { ImprovedNoise } from "three/examples/jsm/math/ImprovedNoise.js";
+import { makeTerrainDetail } from "./textures";
 
 // A single procedurally displaced terrain: a calm plateau under the broom that
 // rises into a 360° ring of ridged peaks, so an orbiting camera always has a
@@ -63,15 +64,18 @@ function buildTerrain() {
 
 export default function Mountains() {
   const geo = useMemo(buildTerrain, []);
-  const mat = useMemo(
-    () =>
-      new THREE.MeshStandardMaterial({
-        vertexColors: true,
-        roughness: 0.92,
-        metalness: 0,
-      }),
-    [],
-  );
+  const mat = useMemo(() => {
+    const { roughnessMap, normalMap } = makeTerrainDetail();
+    return new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      roughnessMap,
+      normalMap,
+      normalScale: new THREE.Vector2(0.6, 0.6),
+      roughness: 0.95,
+      metalness: 0,
+      envMapIntensity: 0.4,
+    });
+  }, []);
   return (
     <mesh
       geometry={geo}

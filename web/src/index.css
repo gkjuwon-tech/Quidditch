@@ -615,9 +615,28 @@ canvas {
 }
 
 @media (max-width: 760px) {
+  .nav { padding: 16px 20px; }
   .nav__links { gap: 12px; font-size: 10px; }
   .nav__links .soon { display: none; }
   .layer { grid-template-columns: 56px 1fr; gap: 14px; }
+  /* keep the copy comfortably inside narrow / portrait screens so the page
+     reads like the desktop layout instead of running edge-to-edge */
+  .screen { padding: clamp(64px, 12vh, 96px) 22px; }
+  .hero-screen { padding-bottom: clamp(72px, 14vh, 110px); }
+  .grid3 { grid-template-columns: 1fr; gap: 30px; }
+  .road { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .footer { justify-content: center; text-align: center; }
+}
+
+@media (max-width: 460px) {
+  .nav__links { gap: 10px; }
+  .hero-sub { font-size: clamp(20px, 6.4vw, 27px); }
+  .pull { font-size: clamp(23px, 7vw, 30px); }
+  .h2 { font-size: clamp(27px, 8.4vw, 40px); }
+  .road { grid-template-columns: 1fr; }
+  .layer { grid-template-columns: 44px 1fr; gap: 12px; }
+  .row { flex-direction: column; align-items: stretch; }
+  .row .btn { text-align: center; }
 }
 
 @media (prefers-reduced-motion: reduce) {
