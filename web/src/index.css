@@ -630,7 +630,10 @@ canvas {
 
 @media (max-width: 460px) {
   .nav__links { gap: 10px; }
-  .hero-sub { font-size: clamp(20px, 6.4vw, 27px); }
+  /* let the live 3D wordmark be the hero on phones: keep the copy supporting,
+     smaller and lower, instead of competing with the type behind it */
+  .hero-sub { font-size: clamp(17px, 5vw, 21px); }
+  .hero-note { font-size: 11px; opacity: 0.85; }
   .pull { font-size: clamp(23px, 7vw, 30px); }
   .h2 { font-size: clamp(27px, 8.4vw, 40px); }
   .road { grid-template-columns: 1fr; }
