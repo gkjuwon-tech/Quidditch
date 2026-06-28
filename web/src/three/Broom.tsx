@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { makeWood, makeBrass, makeLeather } from "./textures";
 
 // Fully procedural flying broom, pushed for a more believable, "real" read:
 //  - a gently bent, varnished, tapered handle (swept tube + clearcoat)
@@ -80,7 +81,16 @@ function Bristles() {
   const COUNT = 420;
   const geo = useBristleGeo();
   const mat = useMemo(
-    () => new THREE.MeshStandardMaterial({ roughness: 0.82, metalness: 0, vertexColors: true }),
+    () =>
+      new THREE.MeshPhysicalMaterial({
+        roughness: 0.78,
+        metalness: 0,
+        vertexColors: true,
+        sheen: 0.6,
+        sheenRoughness: 0.55,
+        sheenColor: new THREE.Color("#ffdca0"),
+        envMapIntensity: 0.5,
+      }),
     [],
   );
 
@@ -136,32 +146,48 @@ export default function Broom() {
   const group = useRef<THREE.Group>(null);
   const handle = useHandle();
 
-  const wood = useMemo(
-    () =>
-      new THREE.MeshPhysicalMaterial({
-        color: new THREE.Color("#3e2410"),
-        roughness: 0.38,
-        metalness: 0.0,
-        clearcoat: 0.7,
-        clearcoatRoughness: 0.35,
-        sheen: 0.3,
-        sheenColor: new THREE.Color("#ffce9a"),
-      }),
-    [],
-  );
-  const brass = useMemo(
-    () =>
-      new THREE.MeshStandardMaterial({
-        color: new THREE.Color("#b8893f"),
-        roughness: 0.28,
-        metalness: 0.9,
-      }),
-    [],
-  );
-  const leather = useMemo(
-    () => new THREE.MeshStandardMaterial({ color: new THREE.Color("#2c1d12"), roughness: 0.78 }),
-    [],
-  );
+  const wood = useMemo(() => {
+    const { map, roughnessMap, normalMap } = makeWood();
+    return new THREE.MeshPhysicalMaterial({
+      map,
+      roughnessMap,
+      normalMap,
+      normalScale: new THREE.Vector2(0.5, 0.5),
+      color: new THREE.Color("#caa074"),
+      roughness: 1.0,
+      metalness: 0.0,
+      clearcoat: 0.85,
+      clearcoatRoughness: 0.28,
+      sheen: 0.25,
+      sheenColor: new THREE.Color("#ffce9a"),
+      anisotropy: 0.6,
+      anisotropyRotation: Math.PI / 2,
+      envMapIntensity: 1.0,
+    });
+  }, []);
+  const brass = useMemo(() => {
+    const { roughnessMap, normalMap } = makeBrass();
+    return new THREE.MeshStandardMaterial({
+      roughnessMap,
+      normalMap,
+      normalScale: new THREE.Vector2(0.4, 0.4),
+      color: new THREE.Color("#c69a4c"),
+      roughness: 0.32,
+      metalness: 1.0,
+      envMapIntensity: 1.3,
+    });
+  }, []);
+  const leather = useMemo(() => {
+    const { map, normalMap } = makeLeather();
+    return new THREE.MeshStandardMaterial({
+      map,
+      normalMap,
+      normalScale: new THREE.Vector2(0.8, 0.8),
+      roughness: 0.74,
+      metalness: 0.0,
+      envMapIntensity: 0.6,
+    });
+  }, []);
 
   useFrame((s) => {
     const t = s.clock.elapsedTime;

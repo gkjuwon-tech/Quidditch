@@ -51,7 +51,7 @@ export default function App() {
   return (
     <main className="stage">
       <Canvas
-        dpr={[1, 1.8]}
+        dpr={[1, 2]}
         gl={{
           antialias: true,
           toneMapping: THREE.ACESFilmicToneMapping,
