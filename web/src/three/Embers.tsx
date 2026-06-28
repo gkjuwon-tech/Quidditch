@@ -3,7 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { emberVert, emberFrag } from "./glsl";
 
-export default function Embers({ count = 260 }: { count?: number }) {
+export default function Embers({ count = 340 }: { count?: number }) {
   const matRef = useRef<THREE.ShaderMaterial>(null);
 
   const geo = useMemo(() => {
@@ -12,11 +12,13 @@ export default function Embers({ count = 260 }: { count?: number }) {
     const speed = new Float32Array(count);
     const phase = new Float32Array(count);
     for (let i = 0; i < count; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 26;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 18;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 16 - 2;
-      scale[i] = 0.5 + Math.random() * 2.2;
-      speed[i] = 0.4 + Math.random() * 1.1;
+      positions[i * 3] = (Math.random() - 0.5) * 28;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 16;
+      // keep motes off the camera's lap so none balloon into a near blob
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 15 - 5;
+      // mostly fine dust, with only a few slightly larger motes
+      scale[i] = 0.28 + Math.pow(Math.random(), 2.2) * 0.85;
+      speed[i] = 0.35 + Math.random() * 0.8;
       phase[i] = Math.random() * 6.283;
     }
     const g = new THREE.BufferGeometry();
@@ -31,7 +33,7 @@ export default function Embers({ count = 260 }: { count?: number }) {
     () => ({
       uTime: { value: 0 },
       uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
-      uColor: { value: new THREE.Color("#f4d27a") },
+      uColor: { value: new THREE.Color("#e8c184") },
     }),
     [],
   );

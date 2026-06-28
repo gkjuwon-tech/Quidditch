@@ -171,10 +171,10 @@ export default function Broom() {
       roughnessMap,
       normalMap,
       normalScale: new THREE.Vector2(0.4, 0.4),
-      color: new THREE.Color("#c69a4c"),
-      roughness: 0.32,
+      color: new THREE.Color("#c0964c"),
+      roughness: 0.42,
       metalness: 1.0,
-      envMapIntensity: 1.3,
+      envMapIntensity: 1.0,
     });
   }, []);
   const leather = useMemo(() => {

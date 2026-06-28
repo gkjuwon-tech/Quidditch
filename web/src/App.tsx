@@ -55,7 +55,7 @@ export default function App() {
         gl={{
           antialias: true,
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.15,
+          toneMappingExposure: 1.1,
         }}
         camera={{ position: [0, 1.6, 9.3], fov: 42, near: 0.1, far: 2000 }}
       >
