@@ -95,10 +95,10 @@ void main(){
   vec3 col = mix(grd, sky, smoothstep(-0.05, 0.05, h));
 
   // sun glow + disk (multi-falloff for a soft, photographic bloom)
-  float glow = pow(mu, 3.0) * 0.16 + pow(mu, 12.0) * 0.5 + pow(mu, 220.0) * 1.7;
+  float glow = pow(mu, 3.0) * 0.14 + pow(mu, 12.0) * 0.42 + pow(mu, 220.0) * 1.25;
   col += uSun * glow;
   float disk = smoothstep(0.9991, 0.99955, mu);
-  col += uSun * disk * 5.0;
+  col += uSun * disk * 3.4;
 
   // warm scatter spreading along the horizon away from the sun
   float horizonBand = exp(-abs(h) * 7.0);
@@ -166,7 +166,9 @@ void main(){
 }
 `;
 
-// Floating gold embers / magic dust.
+// Floating airborne dust / faint embers caught in the low sun. Tuned to read
+// as fine, soft motes rather than big glowing blobs: small point sizes, gentle
+// twinkle, depth-faded, and never pushed to a blown-out white core.
 export const emberVert = /* glsl */ `
 uniform float uTime;
 uniform float uPixelRatio;
@@ -174,20 +176,26 @@ attribute float aScale;
 attribute float aSpeed;
 attribute float aPhase;
 varying float vAlpha;
+varying float vWarm;
 ${SIMPLEX_NOISE}
 
 void main(){
   vec3 pos = position;
   float t = uTime * aSpeed;
-  // gentle rise + lateral drift driven by noise
-  pos.y = mod(pos.y + t * 0.6, 18.0) - 9.0;
-  pos.x += snoise(vec3(pos.y * 0.15, aPhase, t * 0.2)) * 1.4;
-  pos.z += snoise(vec3(aPhase, pos.y * 0.15, t * 0.2)) * 1.0;
+  // gentle rise + lazy lateral drift driven by noise
+  pos.y = mod(pos.y + t * 0.4, 16.0) - 8.0;
+  pos.x += snoise(vec3(pos.y * 0.12, aPhase, t * 0.15)) * 1.1;
+  pos.z += snoise(vec3(aPhase, pos.y * 0.12, t * 0.15)) * 0.8;
 
   vec4 mv = modelViewMatrix * vec4(pos, 1.0);
-  float twinkle = 0.5 + 0.5 * sin(t * 3.0 + aPhase * 6.28);
-  vAlpha = twinkle * smoothstep(9.0, 4.0, abs(pos.y));
-  gl_PointSize = aScale * uPixelRatio * (140.0 / -mv.z) * (0.6 + twinkle * 0.6);
+  float dist = -mv.z;
+  // slow, low-amplitude twinkle so motes shimmer instead of strobing bright
+  float twinkle = 0.55 + 0.45 * sin(t * 1.6 + aPhase * 6.28);
+  // fade with height band and gently with distance so far motes stay subtle
+  vAlpha = twinkle * smoothstep(8.0, 3.5, abs(pos.y)) * smoothstep(34.0, 7.0, dist);
+  vWarm = aScale; // larger motes skew slightly warmer/brighter
+  float size = aScale * uPixelRatio * (48.0 / dist) * (0.7 + twinkle * 0.3);
+  gl_PointSize = clamp(size, 0.0, 26.0 * uPixelRatio);
   gl_Position = projectionMatrix * mv;
 }
 `;
@@ -195,12 +203,15 @@ void main(){
 export const emberFrag = /* glsl */ `
 uniform vec3 uColor;
 varying float vAlpha;
+varying float vWarm;
 void main(){
   vec2 c = gl_PointCoord - 0.5;
   float d = length(c);
-  float glow = smoothstep(0.5, 0.0, d);
-  float core = smoothstep(0.18, 0.0, d);
-  vec3 col = mix(uColor, vec3(1.0, 0.95, 0.82), core);
-  gl_FragColor = vec4(col, (glow * 0.55 + core) * vAlpha);
+  // soft gaussian-ish falloff — no hard bright core, so it never clips to white
+  float soft = exp(-d * d * 11.0);
+  float core = smoothstep(0.16, 0.02, d) * (0.25 + 0.4 * vWarm);
+  vec3 col = mix(uColor, vec3(1.0, 0.92, 0.76), core * 0.6);
+  float a = (soft * 0.34 + core * 0.35) * vAlpha;
+  gl_FragColor = vec4(col, a);
 }
 `;

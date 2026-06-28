@@ -98,16 +98,17 @@ export default function Experience() {
       <Sky />
       <Env />
 
-      {/* golden-hour lighting */}
-      <hemisphereLight args={["#ffd9b0", "#2a2030", 0.95]} />
+      {/* golden-hour lighting — warm and present, but tuned so highlights
+         glow without clipping to pure white */}
+      <hemisphereLight args={["#ffd9b0", "#2a2030", 0.85]} />
       <ambientLight intensity={0.22} color="#ffd9b8" />
       <directionalLight
         position={[SUN_DIR.x * 80, SUN_DIR.y * 80 + 10, SUN_DIR.z * 80]}
-        intensity={3.0}
+        intensity={2.4}
         color="#ffb866"
       />
-      <directionalLight position={[5, 4, 9]} intensity={0.8} color="#ffe0b0" />
-      <pointLight position={[0, 1.2, 2.4]} intensity={7} distance={10} color="#ffcaa0" />
+      <directionalLight position={[5, 4, 9]} intensity={0.65} color="#ffe0b0" />
+      <pointLight position={[0, 1.2, 2.4]} intensity={3.8} distance={10} color="#ffcaa0" />
 
       <Mountains />
       <Mist />
@@ -118,12 +119,12 @@ export default function Experience() {
 
       <EffectComposer>
         <Bloom
-          intensity={0.9}
-          luminanceThreshold={0.55}
-          luminanceSmoothing={0.25}
+          intensity={0.62}
+          luminanceThreshold={0.72}
+          luminanceSmoothing={0.3}
           mipmapBlur
         />
-        <Vignette offset={0.28} darkness={0.9} eskil={false} />
+        <Vignette offset={0.3} darkness={0.9} eskil={false} />
       </EffectComposer>
     </>
   );
