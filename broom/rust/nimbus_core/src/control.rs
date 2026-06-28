@@ -1,11 +1,12 @@
-//! Cascaded control core, kept in parity with nimbus_fc.control.{pid,position,attitude,rate,mixer}.
-//! Fixed-size, allocation-free control path. NUM_FANS pinned at 8.
+//! The cascaded control core, kept bit-for-bit in step with
+//! nimbus_fc.control.{pid,position,attitude,rate,mixer}. Fixed-size and
+//! allocation-free the whole way through; NUM_FANS is pinned at 8.
 
 use crate::math::*;
 
 pub const NUM_FANS: usize = 8;
 
-/// Vector PID with anti-windup + derivative-on-measurement (matches pid.PID).
+/// Vector PID, anti-windup plus derivative-on-measurement -- mirrors pid.PID.
 pub struct Pid<const N: usize> {
     kp: [f64; N],
     ki: [f64; N],
@@ -41,7 +42,7 @@ impl<const N: usize> Pid<N> {
     }
 }
 
-/// Plain-old-data parameters (filled from the FFI struct in lib.rs).
+/// Plain old data, populated from the FFI struct over in lib.rs.
 #[derive(Clone)]
 pub struct CoreParams {
     pub dt: f64,
@@ -62,9 +63,9 @@ pub struct CoreParams {
     pub fan_min: f64,
     pub fan_max: f64,
     pub num_fans: usize,
-    pub a: [[f64; NUM_FANS]; 4],     // allocation matrix [T, tx, ty, tz] = A f
-    pub apinv: [[f64; 4]; NUM_FANS], // pseudo-inverse f = A+ wrench
-    pub vel_xy: (f64, f64, f64, f64), // kp, ki, kd, ilim (scalar -> broadcast)
+    pub a: [[f64; NUM_FANS]; 4],     // allocation matrix: [T, tx, ty, tz] = A f
+    pub apinv: [[f64; 4]; NUM_FANS], // its pseudo-inverse: f = A+ wrench
+    pub vel_xy: (f64, f64, f64, f64), // kp, ki, kd, ilim (scalar, broadcast to xy)
     pub vel_z: (f64, f64, f64, f64),
     pub rate_kp: [f64; 3],
     pub rate_ki: [f64; 3],
@@ -83,7 +84,7 @@ pub struct Controller {
     yaw_rate_ff: f64,
 }
 
-/// One control tick's output.
+/// What a single control tick produces.
 pub struct Out {
     pub fan: [f64; NUM_FANS],
     pub collective: f64,
@@ -123,14 +124,14 @@ impl Controller {
         let quat = [state[6], state[7], state[8], state[9]];
         let omega = [state[10], state[11], state[12]];
 
-        // Outer loop (position) at reduced rate
+        // outer (position) loop runs at the slower rate
         if self.tick % (p.pos_loop_div as u64) == 0 {
             let dt_pos = p.dt * p.pos_loop_div as f64;
             self.position(&pos, &vel, &quat, sp, dt_pos);
         }
         self.tick += 1;
 
-        // Attitude: quat error -> rate setpoint
+        // attitude: quaternion error -> rate setpoint
         let err = quat_error_angle_axis(quat, self.q_des);
         let mut rate_sp = [
             self.p.kp_att_rp * err[0],
@@ -142,10 +143,10 @@ impl Controller {
             rate_sp[i] = clip(rate_sp[i], -rl[i], rl[i]);
         }
 
-        // Rate: pid -> torque
+        // rate: pid -> torque
         let torque = self.rate_pid.update(rate_sp, omega, self.p.dt);
 
-        // Mixer
+        // and out through the mixer
         self.allocate(self.collective, torque)
     }
 
@@ -177,7 +178,7 @@ impl Controller {
         vsp_z = clip(vsp_z, -p.max_descent_rate, p.max_climb_rate);
         let acc_z = self.vel_z_pid.update([vsp_z], [vel[2]], dt)[0];
 
-        // desired thrust vector (gravity compensated) + tilt limit
+        // desired thrust vector (gravity-compensated), then clamp the tilt
         let mut tv = [p.mass * acc_xy[0], p.mass * acc_xy[1], p.mass * acc_z + p.hover_thrust];
         let z = tv[2].max(1e-3);
         let xy_norm = sqrt(tv[0] * tv[0] + tv[1] * tv[1]);
@@ -209,7 +210,7 @@ impl Controller {
             *x = clip(*x, p.fan_min, p.fan_max);
         }
 
-        // actual wrench = A f
+        // wrench we actually get back out: A f
         let mut actual = [0.0; 4];
         for k in 0..4 {
             let mut s = 0.0;
@@ -239,7 +240,7 @@ impl Controller {
         f
     }
 
-    /// Prioritize torque over collective under saturation (matches Mixer._desaturate).
+    /// Under saturation, torque wins over collective -- same as Mixer._desaturate.
     fn desaturate(&self, wrench: &[f64; 4]) -> [f64; NUM_FANS] {
         let p = &self.p;
         let tw = [0.0, wrench[1], wrench[2], wrench[3]];

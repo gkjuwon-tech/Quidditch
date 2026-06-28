@@ -1,4 +1,4 @@
-"""The capstone: flight-controller-backed players + the Dementor referee."""
+"""The capstone: FC-flown players plus the Dementor referee."""
 
 import numpy as np
 
@@ -21,7 +21,7 @@ def _match_snitch():
 
 
 def test_broom_agent_flies_stably_to_a_target():
-    """A player flown by the full FC stack reaches its goal without flipping."""
+    """A player flown by the whole FC stack reaches its goal and stays upright."""
     class W:
         t = 0.0
     w = W()
@@ -38,7 +38,7 @@ def test_dementor_keeps_brooms_from_colliding():
     w = World()
     snitch = w.add_ball(BallBody(params.snitch(), [0, 0, 10]),
                         SnitchEvasion(params.snitch()))
-    # two brooms starting close, both diving at the same snitch
+    # two brooms starting tight together, both diving on the same snitch
     w.players.append(BroomAgent(0, [-3, -15, 10], chase_ball(snitch), params=Params()))
     w.players.append(BroomAgent(1, [3, -15, 10], chase_ball(snitch), params=Params()))
     Dementor(broom_sep=3.0, margin=2.0).attach(w)

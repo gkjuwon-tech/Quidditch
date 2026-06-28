@@ -1,9 +1,10 @@
-"""Scripted rider: turn a timeline into per-tick (intent, commands) so
-scenarios read like a flight plan instead of a wall of if-statements.
+"""A scripted rider, so a scenario reads like a flight plan.
 
-A script is a list of (start_time, RiderIntent, Commands) segments; the active
-segment is the last one whose start_time <= t. Commands are edge-triggereded, so
-a command only fires on the tick its segment becomes active.
+Given a timeline it hands back (intent, commands) for any tick, which beats a
+wall of if-statements. The script is a list of (start_time, RiderIntent,
+Commands) segments and the active one is the last segment whose start_time is
+<= t. Commands edge-trigger: each only fires on the tick its segment first
+goes active.
 """
 
 from __future__ import annotations
@@ -35,7 +36,7 @@ class RiderScript:
             else:
                 break
         seg = self.segments[active]
-        # Edge-trigger commands: only on the first tick the segment is active.
+        # only let a segment's command fire the first time we land on it
         if active not in self._fired:
             self._fired.add(active)
             cmd = seg.cmd

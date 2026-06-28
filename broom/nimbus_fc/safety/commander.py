@@ -1,16 +1,15 @@
-"""Commander: the vehicle lifecycle state machine (PX4 'commander' analogue).
+"""Commander: the vehicle lifecycle state machine. PX4's commander, basically.
 
-Owns the transitions between DISARMED / ARMED / TAKEOFF / FLYING /
-RETURN_TO_PIT / LANDING / EMERGENCY_DESCENT, and -- crucially -- generates the
-control setpoint for every NON-manual state. In FLYING it returns None to mean
-"hand the setpoint to the rider (fly-by-intent)".
+It owns every transition between DISARMED / ARMED / TAKEOFF / FLYING /
+RETURN_TO_PIT / LANDING / EMERGENCY_DESCENT, and it produces the setpoint for
+every non-manual state. In FLYING it returns None, which means "the rider has
+it, go fly-by-intent".
 
-Two design choices worth calling out:
-  * The "kill switch" is EMERGENCY_DESCENT: a gentle, controlled, synchronized
-    descent -- NOT a motor cut. Cutting motors on a manned vehicle is how you
-    turn a software fault into a funeral. The estop makes the broom sink
-    softly and park on the ground.
-  * Failsafes can fire from any flying state and always win over rider intent.
+Two things worth flagging:
+  * the kill switch is EMERGENCY_DESCENT -- a gentle, controlled descent, NOT
+    a motor cut. Killing motors on a manned aircraft is how a software bug
+    becomes a funeral, so the estop just sinks softly and parks.
+  * failsafes can trip from any airborne state and always beat rider intent.
 """
 
 from __future__ import annotations
@@ -27,10 +26,10 @@ from .failsafe import Failsafe, FailsafeAction
 
 @dataclass
 class Commands:
-    """Edge-triggered pilot/ground commands for this tick."""
+    """Edge-triggered pilot / ground-station commands for one tick."""
     arm: bool = False
     takeoff: bool = False
-    kill: bool = False        # emergency-stop input (-> gentle emergency descent)
+    kill: bool = False        # estop input -> gentle emergency descent
     disarm: bool = False
 
 
@@ -39,7 +38,7 @@ class Commander:
         self.p = params
         self.state = CommanderState.DISARMED
         self.failsafe = Failsafe(params)
-        self._hold_xy = np.zeros(2)     # latched target for nav states
+        self._hold_xy = np.zeros(2)     # latched xy target the nav states fly to
         self._hold_yaw = 0.0
         self.notes: tuple[str, ...] = ()
 
@@ -53,16 +52,16 @@ class Commander:
 
     def update(self, state: State, soc: float, link_ok: bool,
                cmd: Commands, dt: float) -> Setpoint | None:
-        """Advance the state machine. Returns a nav Setpoint, or None for manual."""
+        """Step the machine once. Returns a nav Setpoint, or None when manual."""
         notes: list[str] = []
         action, msg = self.failsafe.evaluate(soc, link_ok, dt)
 
-        # Highest priority: the kill switch
+        # kill switch wins over everything else
         if cmd.kill and self.motors_armed and self.state != CommanderState.EMERGENCY_DESCENT:
             self._enter(CommanderState.EMERGENCY_DESCENT, state, notes,
                         "KILL: emergency controlled descent")
 
-        # Failsafes (override rider, from any flying state)
+        # failsafes come next; they override the rider from any flying state
         elif self._airborne():
             if action == FailsafeAction.LAND_NOW and self.state != CommanderState.LANDING:
                 self._enter(CommanderState.LANDING, state, notes, msg)
@@ -70,7 +69,7 @@ class Commander:
                   and self.state not in (CommanderState.RETURN_TO_PIT, CommanderState.LANDING)):
                 self._enter(CommanderState.RETURN_TO_PIT, state, notes, msg)
 
-        # Normal lifecycle commands
+        # then the ordinary lifecycle commands
         if self.state == CommanderState.DISARMED and cmd.arm:
             self._enter(CommanderState.ARMED, state, notes, "armed")
         elif self.state == CommanderState.ARMED:
@@ -91,7 +90,7 @@ class Commander:
             return Setpoint(pos=np.array([state.pos[0], state.pos[1], 0.0]))
 
         if s == CommanderState.ARMED:
-            # Hold on the ground, motors live, waiting for takeoff.
+            # sit on the ground with motors live, waiting for the takeoff cmd
             return Setpoint(pos=np.array([self._hold_xy[0], self._hold_xy[1], 0.0]),
                             yaw=self._hold_yaw)
 
@@ -103,21 +102,22 @@ class Commander:
             return sp
 
         if s == CommanderState.FLYING:
-            return None  # rider has control via the intent mapper
+            return None  # rider drives, through the intent mapper
 
         if s == CommanderState.RETURN_TO_PIT:
             pit = p.pit_location
             sp = Setpoint(pos=np.array([pit[0], pit[1], p.pit_approach_alt]),
                           yaw=self._hold_yaw)
-            # Come to a near-stop OVER the pit before descending, so landing
-            # starts from rest and lands on the mark (not coasting past it).
+            # park over the pit at near-zero speed before we descend, so the
+            # landing starts from rest and lands on the mark instead of coasting
+            # past it
             if np.linalg.norm(state.pos[:2] - pit) < 1.5 and state.ground_speed < 0.8:
                 self._enter(CommanderState.LANDING, state, notes, "over pit - landing")
             return sp
 
         if s == CommanderState.LANDING:
-            # Descend at the gentle land speed while HOLDING the latched spot
-            # (a fixed xy target, not "wherever we drift to").
+            # come down at the gentle land speed but pin the latched xy spot,
+            # not "wherever the wind takes us"
             sp = Setpoint(pos=np.array([self._hold_xy[0], self._hold_xy[1], np.nan]),
                           vel_ff=np.array([0.0, 0.0, -p.land_speed]),
                           yaw=self._hold_yaw)

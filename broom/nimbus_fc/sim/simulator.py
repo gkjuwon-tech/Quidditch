@@ -1,10 +1,10 @@
-"""Simulator: closes the loop between the FlightController and the plant.
+"""Simulator: wires the FlightController to the plant and spins the loop.
 
-state_source:
-  "truth"    - controller flies on ground-truth state (standard SITL; the
-               headline scenarios use this to isolate guidance/control/safety).
-  "estimate" - controller flies on the onboard estimate from synthetic noisy
-               IMU + GNSS (experimental end-to-end realism).
+state_source picks what the controller actually sees:
+  "truth"    - it flies on ground truth. plain SITL, and what the headline
+               scenarios use so guidance/control/safety are tested in isolation.
+  "estimate" - it flies on the onboard estimate built from noisy synthetic IMU
+               + GNSS. closer to the real thing, end to end.
 """
 
 from __future__ import annotations
@@ -80,7 +80,7 @@ class Simulator:
         return out
 
     def run(self, duration: float, controller):
-        """controller(t, sim) -> (RiderIntent, Commands, link_ok)."""
+        """Spin for `duration` seconds. controller(t, sim) -> (intent, cmd, link_ok)."""
         n = int(duration / self.p.dt)
         for _ in range(n):
             t = self.dyn.state.t

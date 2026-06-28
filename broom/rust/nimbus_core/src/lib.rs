@@ -1,21 +1,21 @@
 //! C ABI for the NIMBUS real-time control core.
 //!
-//! Layout note: every FFI scalar is f64 (no mixed-width fields) so the structs
-//! have trivial, predictable layout that a Python ctypes.Structure mirrors
-//! exactly -- no unexpected padding across the boundary.
+//! On layout: every FFI scalar is an f64. Keeping the field widths uniform
+//! means the structs lay out predictably and a Python ctypes.Structure mirrors
+//! them exactly -- no surprise padding sneaking across the boundary.
 //!
-//! Builds two ways:
-//!   * default (feature "std"): cdylib with heap-based create/destroy, used by
-//!     the Python ctypes host backend.
+//! Two build flavours:
+//!   * default (feature "std"): a cdylib with heap create/destroy, what the
+//!     Python ctypes host backend links against.
 //!   * --no-default-features: #![no_std] for bare-metal flight MCUs. Use the
-//!     placement-init API (nc_size + nc_init) so there's no heap on the target.
+//!     placement-init API (nc_size + nc_init) and the target never touches a heap.
 #![cfg_attr(not(feature = "std"), no_std)]
 
 mod control;
 mod math;
 
-// Standalone embedded PoC build needs a panic handler; real firmware provides
-// its own, so this is gated behind an explicit feature.
+// the standalone embedded PoC build needs its own panic handler; real firmware
+// brings one, so this stays behind an explicit feature gate.
 #[cfg(all(not(feature = "std"), feature = "poc-panic"))]
 #[panic_handler]
 fn panic(_: &core::panic::PanicInfo) -> ! {
@@ -24,7 +24,7 @@ fn panic(_: &core::panic::PanicInfo) -> ! {
 
 use control::{Controller, CoreParams, Out, NUM_FANS};
 
-/// All parameters, as f64. Arrays are row-major.
+/// Every parameter, as f64. Arrays are row-major.
 #[repr(C)]
 pub struct FfiParams {
     pub dt: f64,
@@ -57,8 +57,8 @@ pub struct FfiParams {
     pub rate_ki: [f64; 3],
     pub rate_kd: [f64; 3],
     pub rate_ilim: [f64; 3],
-    pub a: [f64; 32],     // 4x8 allocation matrix, row-major
-    pub apinv: [f64; 32], // 8x4 pseudo-inverse, row-major
+    pub a: [f64; 32],     // 4x8 allocation matrix (row-major)
+    pub apinv: [f64; 32], // 8x4 pseudo-inverse (row-major)
 }
 
 #[repr(C)]
@@ -114,8 +114,8 @@ impl From<&FfiParams> for CoreParams {
     }
 }
 
-/// Create a controller on the heap. Returns an opaque handle; free with
-/// `nc_destroy`. Host-only (needs std/alloc); embedded uses `nc_init`.
+/// Build a controller on the heap and hand back an opaque handle; free it with
+/// `nc_destroy`. Host-only (wants std/alloc) -- embedded goes through `nc_init`.
 ///
 /// # Safety
 /// `params` must point to a valid `FfiParams`.
@@ -132,7 +132,7 @@ pub unsafe extern "C" fn nc_create(params: *const FfiParams) -> *mut Controller 
 /// Free a heap controller. Host-only.
 ///
 /// # Safety
-/// `ctrl` must come from `nc_create` and not be used afterwards.
+/// `ctrl` must have come from `nc_create`, and must not be touched afterwards.
 #[cfg(feature = "std")]
 #[no_mangle]
 pub unsafe extern "C" fn nc_destroy(ctrl: *mut Controller) {
@@ -141,8 +141,8 @@ pub unsafe extern "C" fn nc_destroy(ctrl: *mut Controller) {
     }
 }
 
-// No-alloc placement API (works on bare metal; no heap required)
-/// Size in bytes of a `Controller`, so firmware can reserve static storage.
+// no-alloc placement API -- works on bare metal, never asks for a heap
+/// Size of a `Controller` in bytes, so firmware can carve out static storage.
 #[no_mangle]
 pub extern "C" fn nc_size() -> usize {
     core::mem::size_of::<Controller>()
@@ -154,7 +154,7 @@ pub extern "C" fn nc_align() -> usize {
     core::mem::align_of::<Controller>()
 }
 
-/// Initialize a controller into caller-provided storage (no heap).
+/// Construct a controller into caller-provided storage (no heap).
 ///
 /// # Safety
 /// `slot` must point to writable memory of at least `nc_size()` bytes with
@@ -177,7 +177,7 @@ pub unsafe extern "C" fn nc_reset(ctrl: *mut Controller) {
     }
 }
 
-/// Run one control tick. `state` has 13 f64, `sp` has 8 f64, `out` is written.
+/// Run a single control tick: `state` is 13 f64, `sp` is 8 f64, `out` is filled in.
 ///
 /// # Safety
 /// All pointers must be valid and correctly sized; `ctrl` from `nc_create`.

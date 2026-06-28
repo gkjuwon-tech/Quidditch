@@ -1,15 +1,14 @@
-"""Quaffle: the gentle scoring ball. Hover, get caught, get carried, get thrown.
+"""Quaffle: the gentle scoring ball. Hover, get caught, carried, thrown.
 
-The opposite of the Bludger -- it must be easy and safe to handle:
-  FREE   -> holds a soft hover and sinks slowly; a player's hand within
-            catch_radius catches it.
-  HELD   -> rides just ahead of its holder, matching their motion. After a
-            short carry it is thrown at the nearest hoop.
-  THROWN -> flies to the aimed hoop with a gentle homing "assist" (forgiving
-            aim, tunable per league), and scores when it passes through.
+Everything the Bludger isn't -- it has to be easy and safe to handle:
+  FREE   -> soft hover, sinking slowly; a hand inside catch_radius grabs it.
+  HELD   -> rides just ahead of whoever's holding it, matching their motion,
+            then after a short carry gets thrown at the nearest hoop.
+  THROWN -> flies to the aimed hoop with a gentle homing assist (forgiving
+            aim, tunable per league) and scores on pass-through.
 
-The no-contact layer still applies, so even the Quaffle never bonks anyone --
-but its whole character is to be caught, so catch_radius is generous.
+The no-contact layer is still in force, so even the Quaffle never bonks
+anyone. But getting caught is the whole point, so catch_radius is generous.
 """
 
 from __future__ import annotations
@@ -29,7 +28,7 @@ class QuaffleBehavior:
         self.hover_descent = params.extra["hover_descent"]
         self.carry_time = carry_time
         self.throw_speed = throw_speed
-        self.assist = assist            # 0 = no help, 1 = strong homing to hoop
+        self.assist = assist            # 0 = no help at all, 1 = hard homing onto the hoop
         self.state = self.FREE
         self.holder = None
         self._held_since = 0.0
@@ -48,7 +47,7 @@ class QuaffleBehavior:
                     world.log_event(f"QUAFFLE caught by player {pl.id} "
                                     f"at t={world.t:.2f}s")
                     break
-            # soft hover with a slow sink so it's always reachable
+            # gentle hover that sinks a touch, so it stays within reach
             return np.array([0.0, 0.0, -self.hover_descent])
 
         if self.state == self.HELD:
@@ -60,7 +59,7 @@ class QuaffleBehavior:
                                 f"{self.holder.id} at t={world.t:.2f}s")
             return (hold_at - body.pos) * 6.0 + self.holder.vel
 
-        # THROWN: fly to the hoop, with homing assist, score on pass-through
+        # THROWN: home toward the hoop and score the moment we pass through
         to_hoop = self._aim - body.pos
         n = float(np.linalg.norm(to_hoop))
         straight = body.vel.copy()

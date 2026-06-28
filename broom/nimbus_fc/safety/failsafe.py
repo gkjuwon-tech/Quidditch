@@ -1,9 +1,9 @@
-"""Failsafe evaluation: battery and datalink -> requested safe action.
+"""Failsafe policy: battery + datalink in, a recommended safe action out.
 
-Pure policy, no state machine here -- the commander owns transitions and just
-asks this what the current hazards demand. Battery thresholds mirror
-ArduPilot's two-stage low/critical scheme; link loss uses a debounce timer so
-a single dropped packet doesn't trigger a return-to-pit.
+No state machine lives here. The commander owns transitions and just asks
+this "given the hazards right now, what should I do". Battery uses the same
+two-stage low/critical idea as ArduPilot, and the link check is debounced so
+one dropped packet doesn't send us home.
 """
 
 from __future__ import annotations
@@ -15,8 +15,8 @@ from ..core.params import Params
 
 class FailsafeAction(str, Enum):
     NONE = "NONE"
-    RETURN_TO_PIT = "RETURN_TO_PIT"   # battery low, or link lost
-    LAND_NOW = "LAND_NOW"             # battery critical: nearest safe descent
+    RETURN_TO_PIT = "RETURN_TO_PIT"   # battery low or link dropped
+    LAND_NOW = "LAND_NOW"             # battery critical, just put it down
 
 
 class Failsafe:
@@ -26,6 +26,7 @@ class Failsafe:
         self._link_lost_for = 0.0
 
     def evaluate(self, soc: float, link_ok: bool, dt: float) -> tuple[FailsafeAction, str]:
+        # accumulate time-without-link, reset the instant a packet gets through
         self._link_lost_for = 0.0 if link_ok else self._link_lost_for + dt
 
         if soc <= self.p.batt_land_soc:

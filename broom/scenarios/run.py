@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""NIMBUS-9¾ broom -- runnable SITL scenarios.
+"""NIMBUS-9¾ broom -- the runnable SITL scenarios.
 
-    python scenarios/run.py            # list scenarios
+    python scenarios/run.py            # list them
     python scenarios/run.py hover      # run one
-    python scenarios/run.py all        # run them all
+    python scenarios/run.py all        # run the lot
 
-Each scenario flies the full flight-control + safety stack against the 6-DOF
-plant and prints a terminal report (state timeline + ASCII telemetry). CSVs
-are written to scenarios/out/ for plotting (see tools/plot.py).
+Every scenario flies the whole flight-control + safety stack against the 6-DOF
+plant and prints a terminal report (state timeline + ASCII telemetry). Each one
+also drops a CSV in scenarios/out/ for plotting -- see tools/plot.py.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from __future__ import annotations
 import os
 import sys
 
-# Make `nimbus_fc` importable when run straight from the repo.
+# let `nimbus_fc` import cleanly when this is run straight out of the repo
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import numpy as np  # noqa: E402
@@ -28,7 +28,7 @@ from nimbus_fc.sim.wind import Wind  # noqa: E402
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "out")
 
-# Control backend for all scenarios: "python" (default) or "rust". Set by CLI.
+# which control backend every scenario uses: "python" (default) or "rust", via CLI
 _BACKEND = "python"
 
 
@@ -36,7 +36,6 @@ def _mk(**kw) -> Simulator:
     return Simulator(backend=_BACKEND, **kw)
 
 
-# Reporting
 def report(name: str, blurb: str, sim: Simulator) -> None:
     rows = sim.log.rows
     print("\n" + "=" * 74)
@@ -44,7 +43,7 @@ def report(name: str, blurb: str, sim: Simulator) -> None:
     print(f"  {blurb}")
     print("=" * 74)
 
-    # State-transition timeline
+    # timeline of state transitions
     print("  flight log:")
     last = None
     for r in rows:
@@ -57,7 +56,7 @@ def report(name: str, blurb: str, sim: Simulator) -> None:
     print(f"  final: {f['state']} at ({f['x']:.1f},{f['y']:.1f},{f['z']:.1f}) m, "
           f"battery {f['soc']:.0f}%")
 
-    # Telemetry sparklines
+    # telemetry sparklines
     print("  telemetry:")
     for line in sim.log.summary(["z", "speed", "pitch", "soc"]).splitlines():
         print("    " + line)
@@ -80,7 +79,6 @@ def _launch(*extra):
     ])
 
 
-# Scenarios
 def scn_hover():
     sim = _mk(initial=_ground())
     script = _launch(Segment(8.0, intent=RiderIntent()))
@@ -91,7 +89,7 @@ def scn_hover():
 
 def scn_joyride():
     sim = _mk(initial=_ground())
-    # Fly a rough rectangle using only stick deflections, then release to hold.
+    # rough rectangle on stick deflections alone, then let go and it holds
     script = _launch(
         Segment(7.0, intent=RiderIntent(pitch=0.7)),
         Segment(12.0, intent=RiderIntent(roll=0.7)),
@@ -108,9 +106,9 @@ def scn_joyride():
 def scn_geofence():
     sim = _mk(initial=_ground())
     script = _launch(
-        Segment(8.0, intent=RiderIntent(pitch=1.0, roll=1.0)),    # corner
-        Segment(40.0, intent=RiderIntent(pitch=-1.0, roll=-1.0)),  # opposite
-        Segment(70.0, intent=RiderIntent(lift=1.0)),              # ceiling
+        Segment(8.0, intent=RiderIntent(pitch=1.0, roll=1.0)),    # one corner
+        Segment(40.0, intent=RiderIntent(pitch=-1.0, roll=-1.0)),  # the opposite one
+        Segment(70.0, intent=RiderIntent(lift=1.0)),              # straight up at the ceiling
     )
     sim.run(85.0, lambda t, s: script(t))
     xs = [r["x"] for r in sim.log.rows]
@@ -125,7 +123,7 @@ def scn_geofence():
 
 def scn_battery():
     sim = _mk(initial=_ground(20.0, 10.0), initial_soc=0.33)
-    # Fly away from the pit; battery crosses the RTP threshold mid-flight.
+    # head away from the pit so the battery crosses the RTP line mid-flight
     script = _launch(Segment(7.0, intent=RiderIntent(pitch=0.6, roll=-0.3)))
     sim.run(70.0, lambda t, s: script(t))
     report("battery", "Battery sags below the Return-To-Pit threshold mid-joyride. "
@@ -136,7 +134,7 @@ def scn_killswitch():
     sim = _mk(initial=_ground())
     script = _launch(
         Segment(8.0, intent=RiderIntent(pitch=0.5)),
-        Segment(13.0, cmd=Commands(kill=True)),   # emergency-stop input
+        Segment(13.0, cmd=Commands(kill=True)),   # hit the estop
     )
     sim.run(28.0, lambda t, s: script(t))
     after = [r for r in sim.log.rows if r["t"] > 13.2]

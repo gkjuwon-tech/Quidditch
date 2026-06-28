@@ -1,10 +1,10 @@
-"""Multi-agent arena: players + balls inside the pitch, advanced together.
+"""The arena: players and balls inside the pitch, all stepped together.
 
-The World owns the pitch bounds, steps every agent, runs each ball's guidance
-(behaviour) through the shared no-contact avoidance layer, and records events
-(captures, tags, scores) and telemetry. It is the closest thing here to the
-fictional central referee -- it sees everyone and enforces the safety rule that
-a ball never physically touches a person.
+The World holds the pitch bounds, steps every agent, pushes each ball's
+guidance through the shared no-contact layer, and logs events (captures, tags,
+scores) plus telemetry. It's the nearest thing here to the all-seeing referee:
+it knows where everyone is and enforces the rule that a ball never physically
+touches a person.
 """
 
 from __future__ import annotations
@@ -17,13 +17,13 @@ from .body import BallBody, Player
 
 
 class Ball:
-    """A ball = a flying body + a guidance behaviour + live status."""
+    """A ball: a flying body, a guidance behaviour, and some live status."""
 
     def __init__(self, body: BallBody, behavior):
         self.body = body
         self.behavior = behavior
         self.name = body.p.name
-        self.active = True          # a caught/parked ball goes inactive
+        self.active = True          # caught or parked balls flip to inactive
         self.events: list[str] = []
 
 
@@ -36,10 +36,10 @@ class World:
         self.avoid = NoContactAvoidance()
         self.t = 0.0
         self.events: list[tuple[float, str]] = []
-        # Scoring hoops: list of (center[3], ring_radius). Set by the scenario.
+        # scoring hoops as (center[3], ring_radius); the scenario fills these in
         self.hoops: list[tuple[np.ndarray, float]] = []
         self.score = 0
-        self.referee = None          # optional Dementor; arbitrates + judges
+        self.referee = None          # optional Dementor that arbitrates and judges
 
     def add_player(self, player: Player, policy=None) -> Player:
         player.policy = policy
@@ -55,15 +55,15 @@ class World:
         self.events.append((self.t, msg))
 
     def step(self, dt: float) -> None:
-        # players move first (they react to the previous tick's world).
-        # An agent may be a kinematic Player or a real broom-flown BroomAgent;
-        # both expose .act(world, dt).
+        # players go first, reacting to last tick's world. an agent is either a
+        # kinematic Player or a real broom-flown BroomAgent -- both give us
+        # .act(world, dt), so we don't care which.
         for pl in self.players:
             override = self.referee.override_for(self, pl) if self.referee else None
             pl.act(self, dt, vel_override=override)
             self._clamp_agent(pl)
 
-        # then balls: guidance -> no-contact avoidance -> bounds -> integrate
+        # balls next: guidance -> no-contact -> bounds -> integrate
         for ball in self.balls:
             if not ball.active:
                 continue
@@ -78,7 +78,7 @@ class World:
             self.referee.judge(self, dt)
 
     def _bound_velocity(self, pos: np.ndarray, vel_cmd: np.ndarray) -> np.ndarray:
-        """Ramp outward velocity to zero near a wall (soft keep-in)."""
+        """Soft keep-in: fade any outward velocity to zero as a wall approaches."""
         out = vel_cmd.copy()
         margin = 2.0
         for k in range(3):

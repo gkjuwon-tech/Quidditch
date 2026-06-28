@@ -1,17 +1,18 @@
-"""rider_input — turn the rider physically waving the broom into RiderIntent.
+"""rider_input -- turn the rider waving the broom around into a RiderIntent.
 
 Challenge 3: "wave the broom up/down/left/right and it flies that way."
-The flight software already has fly-by-intent (nimbus_fc/intent/mapper.py) — it
+The flight software already does fly-by-intent (nimbus_fc/intent/mapper.py): it
 takes a normalized RiderIntent(pitch, roll, yaw, lift) in [-1, 1] and turns it
-into a SAFE, velocity-capped setpoint (centre the stick and it auto-hovers).
+into a safe, velocity-capped setpoint (centre the stick and it auto-hovers).
 
-So the hardware job is just the *input transducer*: read the handle's own pose
-(the rider leans/twists the whole broom) plus a throttle grip, and emit that
-RiderIntent. The handle IMU (firmware/pinmap.csv IMU_A) gives lean angles; a
-twist grip gives yaw; a thumb throttle (or a vertical heave gesture) gives lift.
+So all the hardware has to do is be the input transducer: read the handle's own
+pose (the rider leans and twists the whole broom) plus a throttle grip, and emit
+that RiderIntent. The handle IMU (firmware/pinmap.csv IMU_A) gives lean angles,
+a twist grip gives yaw, and a thumb throttle (or a vertical heave gesture) gives
+lift.
 
-    pose ─► RiderInputDecoder ─► RiderIntent ─► IntentMapper ─► setpoint ─► fans
-    (lean/twist/throttle)         (this file)     (software, already exists)
+    pose -> RiderInputDecoder -> RiderIntent -> IntentMapper -> setpoint -> fans
+    (lean/twist/throttle)        (this file)     (software, already exists)
 
     python3 firmware/rider_input.py   # demo: wave it, watch where it commands
 
@@ -26,11 +27,11 @@ import os
 import sys
 
 # full-scale gestures: how far you lean/twist to ask for max command
-FULL_LEAN_DEG  = 30.0     # lean this much from neutral -> full velocity wish
-FULL_TWIST_DPS = 60.0     # twist rate for full yaw wish
-DEADBAND       = 0.04     # ignore tiny tremor (rider isn't a robot)
-EXPO           = 0.35     # soften centre, keep ends crisp (fine hover control)
-HEAVE_G        = 0.6      # vertical hand accel (g) that maps to full climb wish
+FULL_LEAN_DEG  = 30.0     # lean this far from neutral and you're asking for full velocity
+FULL_TWIST_DPS = 60.0     # twist rate that means full yaw
+DEADBAND       = 0.04     # swallow the tremor -- a rider's hands aren't a robot's
+EXPO           = 0.35     # soft around centre, crisp at the ends, for fine hover control
+HEAVE_G        = 0.6      # vertical hand accel (g) that reads as full climb
 
 
 def _shape(x: float) -> float:
@@ -67,7 +68,7 @@ class RiderInputDecoder:
         return make_intent(pitch, roll, yaw, lift)
 
 
-# Use the real riderintent if we can find the flight package
+# prefer the real RiderIntent if the flight package is on the path
 def _load_real_intent():
     here = os.path.dirname(os.path.abspath(__file__))
     broom = os.path.normpath(os.path.join(here, "..", "..", "broom"))
@@ -98,7 +99,7 @@ def _fields(intent):
 
 def _demo():
     dec = RiderInputDecoder()
-    print("rider_input — wave the broom, watch the commanded intent\n")
+    print("rider_input -- wave the broom, watch the commanded intent\n")
     gestures = [
         ("hold still (hands off)",        0,   0,   0,   0.0),
         ("lean forward hard",            26,   0,   0,   0.0),
@@ -120,7 +121,7 @@ def _maybe_full_loop(dec):
     """If the flight stack imports, prove the gesture actually moves the broom
     through the REAL intent mapper (velocity-capped, auto-hover on release)."""
     if _RIDER_INTENT is None:
-        print("(nimbus_fc not found on path — skipping the closed-loop check)")
+        print("(nimbus_fc not found on path -- skipping the closed-loop check)")
         return
     try:
         import numpy as np

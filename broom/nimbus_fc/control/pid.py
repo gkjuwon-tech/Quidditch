@@ -1,12 +1,12 @@
-"""Vector PID with anti-windup and derivative-on-measurement.
+"""A vectorised PID. Anti-windup + derivative-on-measurement.
 
-Design notes (benchmarked against Betaflight's rate PID and PX4's control
-library):
-  - Derivative is taken on the *measurement*, not the error, to avoid
-    "derivative kick" when the setpoint steps.
-  - Integral uses clamping anti-windup, and is frozen when the output is
-    saturated (back-calculation handled by the caller via `freeze_i`).
-  - Operates element-wise on numpy arrays so one class covers 1- and 3-axis.
+A few deliberate choices, same ones Betaflight and PX4 land on:
+  * D is on the measurement, not the error, so a setpoint step doesn't
+    produce a derivative kick.
+  * the integrator clamps, and the caller freezes it (freeze_i) whenever the
+    output saturates -- cheap back-calculation.
+  * everything is element-wise on arrays, so the one class does scalar, xy
+    and full 3-axis without fuss.
 """
 
 from __future__ import annotations
@@ -22,8 +22,9 @@ class PID:
         self.i_limit = np.atleast_1d(np.asarray(i_limit, dtype=float))
         self.out_limit = (None if out_limit is None
                           else np.atleast_1d(np.asarray(out_limit, dtype=float)))
-        # Integral is sized lazily to the signal width on first update, so the
-        # same class works with scalar gains over a 2-vector (xy) or 3-vector.
+        # we don't know the signal width until the first update(), so the
+        # integrator allocates itself lazily. lets scalar gains drive a 2- or
+        # 3-vector interchangeably.
         self._i = None
         self._prev_meas = None
 
@@ -34,21 +35,22 @@ class PID:
     def update(self, setpoint, measurement, dt: float, freeze_i: bool = False):
         sp = np.atleast_1d(np.asarray(setpoint, dtype=float))
         meas = np.atleast_1d(np.asarray(measurement, dtype=float))
-        error = sp - meas
+        err = sp - meas
         if self._i is None:
-            self._i = np.zeros_like(error)
+            self._i = np.zeros_like(err)
 
         if not freeze_i:
-            self._i += self.ki * error * dt
+            self._i += self.ki * err * dt
             self._i = np.clip(self._i, -self.i_limit, self.i_limit)
 
+        # first call has no previous sample, so D contributes nothing
         if self._prev_meas is None:
             d_meas = np.zeros_like(meas)
         else:
             d_meas = (meas - self._prev_meas) / dt
         self._prev_meas = meas.copy()
 
-        out = self.kp * error + self._i - self.kd * d_meas
+        out = self.kp * err + self._i - self.kd * d_meas
         if self.out_limit is not None:
             out = np.clip(out, -self.out_limit, self.out_limit)
         return out

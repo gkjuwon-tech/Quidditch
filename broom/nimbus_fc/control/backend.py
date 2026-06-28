@@ -1,18 +1,18 @@
-"""Swappable control backends for the inner cascade.
+"""Two interchangeable inner-loop backends behind one interface.
 
-Both backends expose the identical interface:
+Both speak the same two methods:
 
     control(state, setpoint, dt) -> (fan_thrusts, collective, torque_cmd, torque_actual)
     reset()
 
-`PyControlBackend` runs the pure-Python cascade (great for development and
-exactly what the rest of the package was built on). `RustControlBackend` calls
-the compiled `nimbus_core` cdylib through ctypes -- the same algorithm, but in
-a deterministic, GC-free, allocation-free control path suitable for hard real time.
+PyControlBackend is the pure-Python cascade everything else here grew up on
+-- ideal while developing. RustControlBackend ctypes into the compiled
+nimbus_core cdylib: identical maths, but a deterministic path with no GC and
+no allocations, the kind of thing you'd actually fly.
 
-The whole point of the split: policy/safety logic (commander, geofence, intent)
-stays in expressive Python; the high-rate numeric loop that "if it stutters,
-someone falls" runs in Rust.
+That's the whole reason for the split. The policy and safety brains
+(commander, geofence, intent) get to stay in readable Python; the fast loop
+where a stutter means somebody hits the ground runs in Rust.
 """
 
 from __future__ import annotations
@@ -32,7 +32,6 @@ from .rate import RateController
 NUM_FANS = 8
 
 
-# Python backend
 class PyControlBackend:
     name = "python"
 
@@ -66,7 +65,7 @@ class PyControlBackend:
         return fan, self._collective, torque, actual
 
 
-# Rust backend (ctypes)
+# --- Rust backend, reached over ctypes ---
 class _FfiParams(ctypes.Structure):
     _fields_ = [
         ("dt", ctypes.c_double),
@@ -145,7 +144,8 @@ class RustControlBackend:
         fp = self._build_ffi_params(params)
         self.ctrl = self.lib.nc_create(ctypes.byref(fp))
         if not self.ctrl:
-            raise RuntimeError("nc_create returned null")
+            raise RuntimeError("nc_create returned null")  # OOM in the lib, basically never
+
 
         self._out = _FfiOut()
         self._state = (ctypes.c_double * 13)()
@@ -153,7 +153,7 @@ class RustControlBackend:
 
     @staticmethod
     def _build_ffi_params(p: Params) -> _FfiParams:
-        mix = Mixer(p)  # reuse the validated allocation + pseudo-inverse
+        mix = Mixer(p)  # borrow the already-validated A / pinv instead of redoing it
         fp = _FfiParams()
         fp.dt = p.dt
         fp.pos_loop_div = float(p.pos_loop_div)
@@ -181,14 +181,15 @@ class RustControlBackend:
         fp.rate_ki[:] = list(map(float, p.ki_rate))
         fp.rate_kd[:] = list(map(float, p.kd_rate))
         fp.rate_ilim[:] = list(map(float, p.rate_i_limit))
-        fp.a[:] = list(map(float, mix.A.flatten()))          # 4x8 row-major
-        fp.apinv[:] = list(map(float, mix.A_pinv.flatten()))  # 8x4 row-major
+        fp.a[:] = list(map(float, mix.A.flatten()))           # 4x8, row major
+        fp.apinv[:] = list(map(float, mix.A_pinv.flatten()))  # 8x4, row major
         return fp
 
     def reset(self) -> None:
         self.lib.nc_reset(self.ctrl)
 
     def control(self, state: State, sp: Setpoint, dt: float):
+        # flatten state into the preallocated [pos vel quat omega] buffer
         st = self._state
         st[0:3] = list(map(float, state.pos))
         st[3:6] = list(map(float, state.vel))
@@ -201,7 +202,7 @@ class RustControlBackend:
         else:
             spp[0:3] = list(map(float, sp.pos))
         spp[3:6] = list(map(float, sp.vel_ff))
-        spp[6] = float(sp.yaw) if sp.yaw is not None else np.nan
+        spp[6] = float(sp.yaw) if sp.yaw is not None else np.nan  # NaN => hold current
         spp[7] = float(sp.yaw_rate_ff)
 
         self.lib.nc_control(self.ctrl, st, spp, ctypes.byref(self._out))

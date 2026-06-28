@@ -1,4 +1,4 @@
-"""Ball behaviours + the no-contact safety invariant."""
+"""Ball behaviours and the no-contact safety invariant."""
 
 import numpy as np
 
@@ -17,18 +17,18 @@ def _hoops():
 
 
 def test_ball_never_drives_into_a_person():
-    """A ball commanded straight at a person stops at its safety shell and never
-    touches them -- the core no-contact guarantee. (A person ramming the ball is
-    their own doing; the padded shell is there for exactly that.)"""
+    """Aim a ball straight at a person and it stops at its safety shell without
+    ever touching them -- the core no-contact guarantee. (If a person rams the
+    ball, that's on them; the padded shell exists for exactly that case.)"""
     class Seek:
         def __init__(self, t): self.t = np.array(t, float)
         def update(self, world, ball, dt): return (self.t - ball.body.pos) * 3.0
 
     w = World()
-    pl = Player(0, [12, 0, 9], max_speed=14)            # stationary target
+    pl = Player(0, [12, 0, 9], max_speed=14)            # parked target
     w.add_player(pl, policy=lambda world, p: np.zeros(3))
     body = BallBody(params.bludger(), [-12, 0, 9])
-    w.add_ball(body, Seek([12, 0, 9]))                  # drive straight at them
+    w.add_ball(body, Seek([12, 0, 9]))                  # point it right at them
     worst = np.inf
     for _ in range(int(6.0 / DT)):
         w.step(DT)
@@ -95,7 +95,7 @@ def test_quaffle_can_be_caught_and_scored():
 
 
 def test_match_safety_invariant_holds():
-    """All three balls + four players: no ball ever physically touches anyone."""
+    """Three balls, four players, and not one ball ever physically touches anyone."""
     w = World()
     w.hoops = _hoops()
     for i in range(4):

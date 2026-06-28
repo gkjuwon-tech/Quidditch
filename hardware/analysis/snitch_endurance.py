@@ -1,25 +1,25 @@
 #!/usr/bin/env python3
-"""Golden Snitch — keep the walnut-scale envelope, keep the agility envelope, fly a whole match.
+"""Golden Snitch -- keep the walnut, keep the agility, fly a whole match.
 
-The Snitch has the broom's exact problem, shrunk to 50 g. A walnut-sized ball
-has almost no disc area, so 4 micro-EDFs (Ø16 mm) hover at a brutal disc
-loading => tens of watts out of a 1S 300 mAh cell (~1.1 Wh). That is a
-~3-minute hover sprint, and under real evasion (32 m/s^2 maneuvers) far less --
-which is *exactly* why the guidance already fades the Snitch out over
-fatigue_tau = 120 s (ball/params.py): the software was quietly modelling a
-battery that dies in two minutes.
+The Snitch is the broom's exact problem shrunk to 50 g. A walnut-sized ball has
+almost no disc area, so 4 micro-EDFs (Ø16 mm) hover at a brutal disc loading =>
+tens of watts out of a 1S 300 mAh cell (~1.1 Wh). That's a ~3-minute hover
+sprint, and far less under real evasion (32 m/s^2 maneuvers) -- which is
+exactly why the guidance already fades the Snitch out over fatigue_tau = 120 s
+(ball/params.py). The software was quietly modelling a battery that dies in two
+minutes.
 
-The broom's fix was ENERGY DENSITY: carry the energy as liquid fuel + a genset
-(analysis/endurance_match.py). A 50 g ball cannot carry a turbine or fuel --
-adding *any* mass blows the canon walnut form and spikes hover power (P ~ W^1.5).
+The broom's answer was energy density: carry the energy as liquid fuel plus a
+genset (analysis/endurance_match.py). A 50 g ball can't haul a turbine or fuel
+-- any added mass blows the canon walnut form and spikes hover power (P ~ W^1.5).
 
-So the Snitch flips the broom's lever: it does not CARRY the energy at all, it
-HARVESTS it. The pitch becomes a powered volume -- a perimeter phased array
-beams ~5.8 GHz power and electronically steers the spot onto the Snitch using
-the pose it already broadcasts to the Dementor referee (SNT-14/SNT-19). The
-gold shell's dimple vents double as a conformal rectenna (SNT-15/16). The
-existing 300 mAh cell stops being the engine and becomes a peak/ride-through
-BUFFER -- exactly the role the broom's 2600 Wh pack plays in the hybrid.
+So the Snitch flips the broom's lever: it doesn't carry the energy at all, it
+harvests it. The pitch becomes a powered volume -- a perimeter phased array
+beams ~5.8 GHz power and steers the spot electronically onto the Snitch using
+the pose it already broadcasts to the Dementor referee (SNT-14/SNT-19). The gold
+shell's dimple vents double as a conformal rectenna (SNT-15/16). The existing
+300 mAh cell stops being the engine and becomes a peak/ride-through buffer --
+exactly the role the broom's 2600 Wh pack plays in the hybrid.
 
   * average power: supplied continuously by the beam (harvested >= draw);
   * peak power (32 m/s^2 maneuvers): supplied by a graphene SUPERCAP (SNT-17);
@@ -37,7 +37,7 @@ import csv
 import math
 import os
 
-# The ball, mirrored from broom/nimbus_fc/ball/params.py snitch()
+# the ball, mirrored from broom/nimbus_fc/ball/params.py snitch()
 G          = 9.81
 M_SNITCH   = 0.05         # kg  (snitch.mass) -- the canon walnut, unchanged
 R_SHELL    = 0.04         # m   (snitch.radius) -- the rectenna's projected area
@@ -46,11 +46,11 @@ FAN_D      = 0.016        # m   (SNT-05: Ø16 mm internal)
 MAX_ACCEL  = 32.0         # m/s^2 (snitch.max_accel) -- high agility, kept
 FATIGUE_TAU = 120.0       # s   (snitch fatigue_tau)
 
-# Existing onboard cell (SNT-12); buffer, not primary energy
+# the onboard cell (SNT-12): a buffer, not the primary energy source
 CELL_WH      = 1.11       # 1S 300 mAh LiPo  (3.7 V x 0.30 Ah)
 CELL_USABLE  = 0.90       # usable fraction
 
-# Micro-EDF aerodynamic and electrical efficiencies
+# micro-EDF aerodynamic and electrical efficiencies
 RHO        = 1.225
 FM_MICRO   = 0.50         # figure of merit, small low-Reynolds ducts (broom: 0.62)
 ETA_MOTOR  = 0.80
@@ -58,7 +58,7 @@ ETA_ESC    = 0.92
 ETA_WIRE   = 0.96
 ETA_ELEC   = ETA_MOTOR * ETA_ESC * ETA_WIRE
 
-# Pitch power-beaming link (SNT-20 infrastructure, SNT-15/16 onboard)
+# pitch power-beaming link (SNT-20 infrastructure, SNT-15/16 onboard)
 FREQ_HZ      = 5.8e9      # ISM band
 C_LIGHT      = 2.998e8
 BEAM_RANGE_M = 25.0       # design range: array perimeter -> mid-pitch Snitch
@@ -68,7 +68,7 @@ ETA_RF_DC    = 0.55       # rectenna RF -> DC (SNT-16)
 DUTY         = 0.80       # match-average draw / hover draw (maneuvers buffered;
                           # cruise/coast pulls the time-average below a burst)
 
-# Peak buffer (SNT-17 supercap) and ride-through (SNT-12)
+# peak buffer (SNT-17 supercap) and ride-through (SNT-12)
 JUKE_BURST_S = 0.40       # s, burst duration covered by the supercap
 SUPERCAP_F   = 7.0        # graphene EDLC capacitance
 SUPERCAP_V   = 5.4        # charged voltage
@@ -93,11 +93,11 @@ def main() -> int:
     A = disc_area()
     W = M_SNITCH * G
 
-    # Battery-only reference case.
+    # battery-only reference case
     p_hover = hover_draw_w(W, A)
     sprint_s = CELL_WH * CELL_USABLE / p_hover * 3600.0
 
-    # Beamed-power case.
+    # beamed-power case
     lam = C_LIGHT / FREQ_HZ
     g_tx = 4 * math.pi * A_TX_M2 / lam ** 2
     a_rx = math.pi * R_SHELL ** 2                      # lit hemisphere of the shell
@@ -110,7 +110,7 @@ def main() -> int:
     p_tx_rf = p_rx_rf / capture                         # RF the array must radiate
     p_array_dc = p_tx_rf / ETA_DC_RF                    # wall power into the array
 
-    # Peak buffer and ride-through checks.
+    # peak buffer and ride-through checks
     a_peak = math.sqrt(MAX_ACCEL ** 2 + G ** 2)         # maneuver accel + holding gravity
     t_peak = M_SNITCH * a_peak
     p_peak = hover_draw_w(t_peak, A)
@@ -126,19 +126,19 @@ def main() -> int:
     form_ok = True   # 50 g kept: rectenna is printed onto the shell, supercap ~1-2 g
 
     print("=" * 68)
-    print(" GOLDEN SNITCH — MATCH ENDURANCE (beamed-power range extender)")
+    print(" GOLDEN SNITCH -- MATCH ENDURANCE (beamed-power range extender)")
     print(" keep the walnut, keep the agility, fill a whole match")
     print("=" * 68)
 
-    print("\n[1] battery-only — a 50 g ball is a sprinter too")
+    print("\n[1] battery-only -- a 50 g ball is a sprinter too")
     print(f"    disc area ............. {A*1e4:8.2f} cm^2  ({N_FANS} x Ø{FAN_D*1000:.0f} mm micro-EDF)")
     print(f"    hover draw ............ {p_hover:8.1f} W")
     print(f"    onboard cell .......... {CELL_WH:8.2f} Wh   (1S 300 mAh, SNT-12)")
     print(f"    hover to empty ........ {sprint_s:8.0f} s   ({sprint_s/60:.1f} min)")
     print(f"    >> the guidance already fades it out at fatigue_tau = {FATIGUE_TAU:.0f} s.")
-    print(f"       The 2-minute 'fatigue' was a 2-minute BATTERY all along.")
+    print("       The 2-minute 'fatigue' was a 2-minute BATTERY all along.")
 
-    print("\n[2] beamed power — don't carry the energy, harvest it")
+    print("\n[2] beamed power -- don't carry the energy, harvest it")
     print(f"    link .................. {FREQ_HZ/1e9:.1f} GHz, range {BEAM_RANGE_M:.0f} m, "
           f"array aperture {A_TX_M2:.0f} m^2")
     print(f"    end-to-end capture .... {capture*100:8.2f} %   (Friis: G_tx x G_rx x path)")
@@ -146,9 +146,9 @@ def main() -> int:
     print(f"    RF at the rectenna .... {p_rx_rf:8.1f} W")
     print(f"    array radiated RF ..... {p_tx_rf/1000:8.2f} kW")
     print(f"    array wall power ...... {p_array_dc/1000:8.2f} kW  (pitch infra, SNT-20)")
-    print(f"    >> harvested >= draw, continuously, anywhere in the lit pitch.")
+    print("    >> harvested >= draw, continuously, anywhere in the lit pitch.")
 
-    print("\n[3] buffers — agility and occlusion, both covered")
+    print("\n[3] buffers -- agility and occlusion, both covered")
     print(f"    maneuver peak draw ........ {p_peak:8.1f} W   (accel {MAX_ACCEL:.0f} m/s^2 + hold g)")
     print(f"    energy per {JUKE_BURST_S:.1f}s burst .. {e_burst:8.1f} J")
     print(f"    supercap usable ....... {e_supercap:8.1f} J   ({SUPERCAP_F:.0f} F @ {SUPERCAP_V:.1f} V, SNT-17)")
@@ -165,8 +165,8 @@ def main() -> int:
     print(f" {'>>> A snitch that flies a full Quidditch match. <<<' if fills else ''}")
     print(f" honest cost: ~{p_array_dc/1000:.1f} kW pumped into the pitch (vs a broom "
           f"genset's 125 kW), and")
-    print(f" the Snitch can only flee where the beam reaches -- which is the in-bounds")
-    print(f" volume it is repelled into staying inside anyway.")
+    print(" the Snitch can only flee where the beam reaches -- which is the in-bounds")
+    print(" volume it is repelled into staying inside anyway.")
     print("=" * 68)
 
     with open(OUT_CSV, "w", newline="") as f:

@@ -1,4 +1,4 @@
-"""Sanity tests for the quaternion/rotation core. Run: python -m pytest -q."""
+"""Sanity checks on the quaternion/rotation core. Run: python -m pytest -q."""
 
 import numpy as np
 
@@ -21,7 +21,7 @@ def test_rotmat_quat_roundtrip():
     q = m.quat_from_euler(0.3, -0.4, 1.1)
     R = m.quat_to_rotmat(q)
     q2 = m.rotmat_to_quat(R)
-    # quaternion double-cover: compare via rotation action
+    # q and -q are the same rotation, so compare by how they rotate a vector
     v = m.vec3(1, -2, 0.5)
     assert np.allclose(m.quat_rotate(q, v), m.quat_rotate(q2, v), atol=1e-9)
 
@@ -42,9 +42,9 @@ def test_inverse_rotation():
 
 def test_integrate_constant_yaw_rate():
     q = m.quat_identity()
-    omega = m.vec3(0, 0, 1.0)  # 1 rad/s yaw
+    omega = m.vec3(0, 0, 1.0)  # yaw at 1 rad/s
     dt = 0.001
-    for _ in range(1000):       # 1 second
+    for _ in range(1000):       # integrate one full second
         q = m.quat_integrate(q, omega, dt)
     yaw = m.quat_to_euler(q)[2]
     assert abs(yaw - 1.0) < 1e-2
@@ -54,5 +54,5 @@ def test_error_axis_drives_toward_target():
     q_cur = m.quat_identity()
     q_des = m.quat_from_euler(0.0, 0.0, 0.3)
     err = m.quat_error_angle_axis(q_cur, q_des)
-    # error about +z (yaw), small-angle ~ 0.3
+    # error sits about +z (yaw); small-angle, so ~0.3
     assert err[2] > 0.25 and abs(err[0]) < 1e-6 and abs(err[1]) < 1e-6

@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""Challenge 5 — altitude ceiling and recovery margins.
+"""Challenge 5 -- altitude ceiling and recovery margins.
 
-Real Quidditch is played far up in the air, not at 18 m. Two honest questions
-when you climb:
-  1) THRUST. Ducted-fan thrust scales with air density, and density falls with
-     altitude. Does the broom still have margin to hover up high?
-  2) FALLING. The original safety case was "fly low, a fall is survivable."
-     At 150 m a fall is lethal -- so the parachute has to be the safety net,
-     and it needs altitude to open. Does the math close?
+Real Quidditch happens way up in the air, not at 18 m. Climbing raises two
+honest questions:
+  1) Thrust. Ducted-fan thrust scales with air density, and density falls off
+     with altitude. Does the broom keep enough margin to hover up high?
+  2) Falling. The original safety case was "fly low, a fall is survivable."
+     At 150 m a fall kills you, so the parachute has to be the net -- and it
+     needs altitude to open. Does the math actually close?
 
-This proves both, then the league simply raises the geofence ceiling
-(nimbus_fc/core/params.py fence_ceiling) to the Quidditch altitude -- the
-geofence mechanism already enforces whatever number it is given.
+This pins down both, after which the league just raises the geofence ceiling
+(nimbus_fc/core/params.py fence_ceiling) to the Quidditch altitude; the geofence
+already enforces whatever number you hand it.
 
     python3 analysis/altitude_ceiling.py
 """
@@ -26,14 +26,14 @@ RHO0         = 1.225          # kg/m^3 sea-level density
 SCALE_H      = 8500.0         # m, density scale height (isothermal approx)
 THRUST_SL    = 8 * 360.0      # N at sea level (params: fan_thrust_max x num_fans)
 
-# Configurations under comparison
+# the two configurations we're comparing
 M_SPRINT     = 120.0          # battery-only all-up (params.mass)
 M_HYBRID     = 166.0          # series-hybrid all-up (analysis/endurance_match.py)
 
 QUIDDITCH_CEILING = 150.0     # m, the league ceiling we want to fly to
 TW_MARGIN    = 1.30           # minimum thrust-to-weight we insist on keeping
 
-# Whole-vehicle ballistic recovery, sized for the heavy configuration
+# whole-vehicle ballistic recovery, sized for the heavy config
 CD_CANOPY    = 1.40
 V_DESCENT    = 6.5            # m/s target touchdown rate under canopy (survivable)
 BRS_DEPLOY_M = 45.0          # m, rocket-deployed full-inflation altitude
@@ -65,7 +65,7 @@ def canopy(mass_kg: float):
 def main() -> int:
     rows = []
     print("=" * 68)
-    print(" NIMBUS-9¾ BROOM — ALTITUDE / CEILING")
+    print(" NIMBUS-9¾ BROOM -- ALTITUDE / CEILING")
     print(" can it fly high like real Quidditch, and survive the height?")
     print("=" * 68)
 
@@ -95,7 +95,7 @@ def main() -> int:
     survivable = QUIDDITCH_CEILING > BRS_DEPLOY_M
     print(f"    >> {'PASS' if survivable else 'FAIL'}: at {QUIDDITCH_CEILING:.0f} m the chute has "
           f"{QUIDDITCH_CEILING - BRS_DEPLOY_M:.0f} m to spare to open.")
-    print(f"       Honest flip: flying HIGH is SAFE for the chute. The danger band")
+    print("       Honest flip: flying HIGH is SAFE for the chute. The danger band")
     print(f"       is BELOW {BRS_DEPLOY_M:.0f} m -- covered by the airbag skirt + perimeter net.")
     rows.append(("canopy_diameter_m", f"{diam:.1f}", "m"))
     rows.append(("brs_min_deploy_m", f"{BRS_DEPLOY_M:.0f}", "m"))

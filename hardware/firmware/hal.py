@@ -1,18 +1,18 @@
-"""nimbus_hal — the bridge between the flight software and the physical broom.
+"""nimbus_hal -- the bridge between the flight software and the physical broom.
 
-The flight stack (nimbus_fc) ends at the MIXER, which emits a per-fan thrust
-command in NEWTONS (one per fan, params.num_fans). This module turns those
-commands into what the hardware actually wants — DShot throttle frames to the
-ESCs — and turns the raw sensors back into the state the estimator expects.
-It also carries the THERMAL GOVERNOR: the one extra loop a bare-stick airframe
-needs, which derates thrust before the in-shaft motors cook.
+The flight stack (nimbus_fc) ends at the mixer, which hands out a per-fan
+thrust command in newtons (one per fan, params.num_fans). This module turns
+those into what the hardware actually wants -- DShot throttle frames for the
+ESCs -- and turns the raw sensors back into the state the estimator expects.
+It also owns the thermal governor: the one extra loop a bare-stick airframe
+needs, derating thrust before the in-shaft motors cook themselves.
 
 Runtime split (see broom/README.md):
   * the hard real-time cascade (pos->att->rate->mixer) is the Rust core
-    (rust/nimbus_core) on the Cortex-M4F;
-  * this HAL is the I/O skin around it — protocols, scaling, limits, thermal.
+    (rust/nimbus_core) running on the Cortex-M4F;
+  * this HAL is the I/O skin around it -- protocols, scaling, limits, thermal.
 
-Pure-stdlib and importable on a host for SITL; the same logic is mirrored in
+Pure stdlib and importable on a host for SITL; the same logic is mirrored in
 firmware C against the pin map in firmware/pinmap.csv.
 
     python3 firmware/hal.py        # self-test: prints a command/telemetry frame
@@ -21,23 +21,23 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-# Mirrors nimbus_fc/core/params.py (single source of truth there)
+# these mirror nimbus_fc/core/params.py, which is the source of truth
 NUM_FANS       = 8
 FAN_THRUST_MAX = 360.0     # N at full throttle           (params.fan_thrust_max)
-FAN_TAU        = 0.04      # s, 1st-order thrust response  (params.fan_tau)
+FAN_TAU        = 0.04      # s, first-order thrust response (params.fan_tau)
 
-# Dshot
+# DShot
 DSHOT_MIN      = 48        # 0..47 are reserved commands; 48 = 0% throttle
 DSHOT_MAX      = 2047
 
-# Thermal governor knobs
-T_WARN_C       = 105.0     # start derating windings here
-T_MAX_C        = 120.0     # hard winding limit -> floor authority
-DERATE_FLOOR   = 0.55      # never derate below this (you're carrying a person)
+# thermal governor knobs
+T_WARN_C       = 105.0     # start derating the windings here
+T_MAX_C        = 120.0     # hard winding limit -> floor the authority
+DERATE_FLOOR   = 0.55      # but never below this -- there's a person on board
 
 
 def thrust_to_throttle(thrust_n: float) -> float:
-    """Newtons -> 0..1 throttle. EDF thrust ~ throttle^2, so invert that."""
+    """Newtons -> 0..1 throttle. EDF thrust goes as throttle^2, so undo that."""
     frac = max(0.0, min(1.0, thrust_n / FAN_THRUST_MAX))
     return frac ** 0.5
 
@@ -48,7 +48,7 @@ def throttle_to_dshot(throttle: float) -> int:
 
 
 def thermal_derate(temp_c: float) -> float:
-    """Per-fan authority multiplier from winding temperature."""
+    """Per-fan authority multiplier as a function of winding temperature."""
     if temp_c <= T_WARN_C:
         return 1.0
     if temp_c >= T_MAX_C:
@@ -59,14 +59,14 @@ def thermal_derate(temp_c: float) -> float:
 
 @dataclass
 class FanState:
-    thrust_n: float = 0.0       # slew-limited actual thrust estimate
-    temp_c: float = 30.0        # winding temperature from the in-duct sensor
+    thrust_n: float = 0.0       # slew-limited estimate of actual thrust
+    temp_c: float = 30.0        # winding temp off the in-duct sensor
 
 
 @dataclass
 class HAL:
-    """Stateless-ish I/O skin: feed it mixer thrusts + sensor temps, get back
-    the DShot frame the ESCs receive and a telemetry snapshot."""
+    """The I/O skin. Feed it mixer thrusts and sensor temps; get back the DShot
+    frame the ESCs see plus a telemetry snapshot."""
     dt: float = 0.0025          # 400 Hz, matches params.dt
     fans: list = field(default_factory=lambda: [FanState() for _ in range(NUM_FANS)])
     governor_active: bool = False
@@ -80,13 +80,13 @@ class HAL:
         assert len(thrust_cmd_n) == NUM_FANS and len(temps_c) == NUM_FANS
         dshot, applied = [], []
         self.governor_active = False
-        alpha = self.dt / (FAN_TAU + self.dt)     # 1st-order response, params.fan_tau
+        alpha = self.dt / (FAN_TAU + self.dt)     # first-order response, params.fan_tau
         for i, (cmd, temp) in enumerate(zip(thrust_cmd_n, temps_c)):
             k = thermal_derate(temp)
             if k < 1.0:
                 self.governor_active = True
             cmd_lim = max(0.0, min(FAN_THRUST_MAX * k, cmd))
-            # model the fan's finite response so SITL matches the airframe
+            # roll in the fan's finite response so SITL tracks the real airframe
             f = self.fans[i]
             f.thrust_n += alpha * (cmd_lim - f.thrust_n)
             f.temp_c = temp
@@ -106,8 +106,8 @@ class HAL:
 
 def _demo():
     hal = HAL()
-    # mixer asks for hover-ish thrust; it demands a hard pull from fan 3 right
-    # as fan 3 runs hot, so the governor has to bite and clamp it.
+    # near-hover thrust, but it pulls hard on fan 3 exactly as fan 3 runs hot,
+    # so the governor has to bite and clamp it back.
     cmd = [150.0, 150.0, 150.0, 320.0, 150.0, 150.0, 150.0, 150.0]
     temps = [60.0, 62.0, 59.0, 113.0, 58.0, 61.0, 60.0, 57.0]   # fan 3 is cooking
     dshot, telem = hal.step(cmd, temps)

@@ -1,16 +1,16 @@
-"""15-state Error-State Kalman Filter (ESKF) for the broom.
+"""A 15-state error-state Kalman filter for the broom.
 
-Nominal state : position(3), velocity(3), attitude quaternion(4),
-                gyro bias(3), accel bias(3).
-Error state   : dp(3), dv(3), dtheta(3), dbg(3), dba(3)   -> 15-dim.
+Nominal state is position(3), velocity(3), attitude quat(4), gyro bias(3),
+accel bias(3). The error state we actually track is the 15-vector
+[dp, dv, dtheta, dbg, dba].
 
-Global (world-frame) attitude error convention (Sola, "Quaternion kinematics
-for the error-state Kalman filter"). High-rate IMU prediction, GNSS/RTK
-position+velocity update. This is the upgrade over the complementary filter:
-it carries a covariance, estimates accelerometer bias, and stays tight enough
-that the controller can fly on the estimate through hard maneuvers AND wind.
+World-frame (global) attitude-error convention, following Sola's ESKF notes.
+IMU drives the high-rate prediction; GNSS/RTK pos+vel does the correction.
+The win over a plain complementary filter is that this thing carries a
+covariance and learns the accel bias, so it stays tight enough to fly on
+through both aggressive stick and gusty wind.
 
-Indices: p=0:3, v=3:6, th=6:9, bg=9:12, ba=12:15.
+State slices: p=0:3, v=3:6, th=6:9, bg=9:12, ba=12:15.
 """
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ class EKF:
         self.bg = np.zeros(3)
         self.ba = np.zeros(3)
 
-        # Covariance and noise (tuned to the synthetic sensor suite).
+        # initial covariance + noise, tuned against the synthetic sensor rig
         self.P = np.diag(np.concatenate([
             0.10 * np.ones(3),   # pos
             0.10 * np.ones(3),   # vel
@@ -63,18 +63,18 @@ class EKF:
 
     def predict(self, gyro: np.ndarray, accel_body: np.ndarray, dt: float) -> None:
         R = m.quat_to_rotmat(self.q)
-        a_b = accel_body - self.ba           # corrected specific force (body)
-        w_b = gyro - self.bg                 # corrected angular rate (body)
+        a_b = accel_body - self.ba           # bias-corrected specific force (body)
+        w_b = gyro - self.bg                 # bias-corrected angular rate (body)
         a_world = R @ a_b + np.array([0.0, 0.0, -m.GRAVITY])
 
-        # Nominal propagation
+        # propagate the nominal state
         self.pos = self.pos + self.vel * dt + 0.5 * a_world * dt * dt
         self.vel = self.vel + a_world * dt
         self.q = m.quat_mul(self.q, m.quat_from_rotvec(w_b * dt))
         self.q = m.quat_normalize(self.q)
-        # biases are random-walk: nominal unchanged
+        # biases random-walk, so their nominal value just sits there
 
-        # Error-state transition f = i + a dt
+        # error-state transition, F = I + A*dt
         Ra = R @ a_b
         F = np.eye(15)
         F[P_, V_] = _I3 * dt
@@ -82,7 +82,7 @@ class EKF:
         F[V_, BA_] = -R * dt
         F[TH_, BG_] = -R * dt
 
-        # Process noise q (discrete, diagonal-ish)
+        # discrete process noise, near enough diagonal
         Q = np.zeros((15, 15))
         Q[V_, V_] = (self.sigma_a * dt) ** 2 * _I3
         Q[TH_, TH_] = (self.sigma_g * dt) ** 2 * _I3
@@ -91,27 +91,18 @@ class EKF:
 
         self.P = F @ self.P @ F.T + Q
 
-        # High-rate gravity/tilt fusion keeps attitude observable between GNSS
-        # fixes (GNSS pos+vel alone observe tilt only weakly -> drift -> blow-up
-        # under gusts). Gated to low specific-force deviation from g, like a
-        # real EKF's accelerometer tilt aiding.
+        # Lean on the accelerometer for tilt between GNSS fixes. Pos+vel alone
+        # barely sees tilt, so without this the attitude drifts and then blows
+        # up the first time a gust hits. Gate it on how close |a| is to g, same
+        # trick real EKFs use for accel tilt aiding.
         self._fuse_accel_tilt(accel_body - self.ba)
 
-    def _fuse_accel_tilt(self, a_b: np.ndarray) -> None:
-        a_norm = float(np.linalg.norm(a_b))
-        if a_norm < 1.0:
-            return
-        trust = np.exp(-abs(a_norm - m.GRAVITY) / 1.5)  # 1 near g, ->0 in maneuvers
-        if trust < 0.05:
-            return
-        R = m.quat_to_rotmat(self.q)
-        ez = np.array([0.0, 0.0, 1.0])
-        z = a_b / a_norm                     # measured gravity-up (body)
-        h = R.T @ ez                         # predicted gravity-up (body)
-        H = np.zeros((3, 15))
-        H[:, TH_] = R.T @ m.skew(ez)
-        Rm = (self.accel_dir_std ** 2 / trust) * _I3
-        y = z - h
+    def _correct(self, H: np.ndarray, y: np.ndarray, Rm: np.ndarray) -> None:
+        """Standard EKF gain + Joseph-form covariance update, error injected.
+
+        Shared by every measurement (tilt, mag, GNSS) so the bias injection and
+        the symmetrised covariance step only live in one place.
+        """
         S = H @ self.P @ H.T + Rm
         K = self.P @ H.T @ np.linalg.inv(S)
         dx = K @ y
@@ -122,10 +113,26 @@ class EKF:
         self.ba += dx[BA_]
         IKH = np.eye(15) - K @ H
         self.P = IKH @ self.P @ IKH.T + K @ Rm @ K.T
-        self.P = 0.5 * (self.P + self.P.T)
+        self.P = 0.5 * (self.P + self.P.T)   # force symmetry, keeps it well-behaved
+
+    def _fuse_accel_tilt(self, a_b: np.ndarray) -> None:
+        a_norm = float(np.linalg.norm(a_b))
+        if a_norm < 1.0:
+            return
+        trust = np.exp(-abs(a_norm - m.GRAVITY) / 1.5)  # ~1 near g, fades to 0 under accel
+        if trust < 0.05:
+            return
+        R = m.quat_to_rotmat(self.q)
+        ez = np.array([0.0, 0.0, 1.0])
+        z = a_b / a_norm                     # measured up, in body frame
+        h = R.T @ ez                         # predicted up, in body frame
+        H = np.zeros((3, 15))
+        H[:, TH_] = R.T @ m.skew(ez)
+        Rm = (self.accel_dir_std ** 2 / trust) * _I3
+        self._correct(H, z - h, Rm)
 
     def fuse_mag(self, mag_body: np.ndarray) -> None:
-        """Magnetometer direction update -> observes yaw (unobservable otherwise)."""
+        """Magnetometer direction fix -- the only thing that pins down yaw."""
         R = m.quat_to_rotmat(self.q)
         n = float(np.linalg.norm(mag_body))
         if n < 1e-6:
@@ -135,21 +142,10 @@ class EKF:
         H = np.zeros((3, 15))
         H[:, TH_] = R.T @ m.skew(self.mag_world)
         Rm = (self.mag_std ** 2) * _I3
-        y = z - h
-        S = H @ self.P @ H.T + Rm
-        K = self.P @ H.T @ np.linalg.inv(S)
-        dx = K @ y
-        self.pos += dx[P_]
-        self.vel += dx[V_]
-        self.q = m.quat_normalize(m.quat_mul(m.quat_from_rotvec(dx[TH_]), self.q))
-        self.bg += dx[BG_]
-        self.ba += dx[BA_]
-        IKH = np.eye(15) - K @ H
-        self.P = IKH @ self.P @ IKH.T + K @ Rm @ K.T
-        self.P = 0.5 * (self.P + self.P.T)
+        self._correct(H, z - h, Rm)
 
     def fuse_gnss(self, pos_meas: np.ndarray, vel_meas: np.ndarray, dt: float = 0.0) -> None:
-        # Measurement: position + velocity (6-dim).
+        # 6-dim measurement: position stacked on velocity
         H = np.zeros((6, 15))
         H[0:3, P_] = _I3
         H[3:6, V_] = _I3
@@ -158,18 +154,4 @@ class EKF:
             self.gps_vel_std ** 2 * np.ones(3),
         ]))
         y = np.concatenate([pos_meas - self.pos, vel_meas - self.vel])
-        S = H @ self.P @ H.T + Rm
-        K = self.P @ H.T @ np.linalg.inv(S)
-        dx = K @ y
-
-        # Inject error into nominal
-        self.pos += dx[P_]
-        self.vel += dx[V_]
-        self.q = m.quat_normalize(m.quat_mul(m.quat_from_rotvec(dx[TH_]), self.q))
-        self.bg += dx[BG_]
-        self.ba += dx[BA_]
-
-        # Covariance update (joseph form for symmetry/stability)
-        IKH = np.eye(15) - K @ H
-        self.P = IKH @ self.P @ IKH.T + K @ Rm @ K.T
-        self.P = 0.5 * (self.P + self.P.T)
+        self._correct(H, y, Rm)

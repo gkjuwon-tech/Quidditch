@@ -1,5 +1,5 @@
-"""Estimator-in-the-loop test: the controller flies on the noisy estimate
-(synthetic IMU + GNSS), never the truth, and must still reach the target."""
+"""Estimator in the loop: the controller flies on the noisy estimate
+(synthetic IMU + GNSS), never the truth, and still has to hit the target."""
 
 import numpy as np
 
@@ -16,7 +16,7 @@ from nimbus_fc.sim.sensors import SensorSuite
 
 
 def _fly_on_estimate(seed: int):
-    """Fly a step maneuver using ONLY the estimate; return (target_err, max_att_err_deg)."""
+    """Fly a step manoeuvre on the estimate alone; return (target_err, max_att_err_deg)."""
     p = Params()
     init = State(pos=np.array([0.0, 0.0, 5.0]))
     d = Dynamics(p, init)
@@ -39,7 +39,7 @@ def _fly_on_estimate(seed: int):
         fan, _ = mix.allocate(coll, tau)
         d.step(fan, p.dt)
         est.predict(gyro, acc, p.dt)
-        if i % 8 == 0:                       # 50 Hz GNSS/RTK fix
+        if i % 8 == 0:                       # GNSS/RTK fix at 50 Hz
             gp, gv = sens.gnss(d.state)
             est.fuse_gnss(gp, gv, p.dt * 8)
         att_err.append(np.linalg.norm(M.quat_error_angle_axis(d.state.quat, est.q)))
@@ -47,21 +47,21 @@ def _fly_on_estimate(seed: int):
 
 
 def test_fly_on_estimate_stays_bounded_all_seeds():
-    """Flying on the noisy estimate must always remain controlled and settle
-    near the target. The complementary filter is not as crisp as truth-state
-    SITL (a few metres of settling spread under worst-case noise is expected),
+    """Flying on the noisy estimate has to stay controlled and settle near the
+    target every time. The complementary filter isn't as crisp as truth-state
+    SITL -- expect a few metres of settling spread under worst-case noise --
     but it never loses control."""
     for seed in range(8):
         target_err, max_att = _fly_on_estimate(seed)
         assert target_err < 5.0, f"seed {seed}: lost the target ({target_err:.2f} m)"
-        # Transient attitude-estimate error during hard accel can be large on a
-        # complementary filter (an EKF would do better) -- but it must stay
-        # bounded and recover; steady-state tightness is checked separately.
+        # hard accel can throw a big transient attitude error on a complementary
+        # filter (an EKF handles it better), but it has to stay bounded and
+        # recover. steady-state tightness gets its own test.
         assert max_att < 35.0, f"seed {seed}: attitude estimate diverged ({max_att:.1f} deg)"
 
 
 def test_attitude_estimate_steady_state_is_tight():
-    """At hover the estimate should lock on within a couple of degrees."""
+    """At hover the estimate should settle to within a couple of degrees."""
     p = Params()
     init = State(pos=np.array([0.0, 0.0, 5.0]))
     d = Dynamics(p, init)

@@ -1,9 +1,10 @@
-"""Flight-controller-backed player used by match simulations.
+"""A match player that's actually flown by the flight controller.
 
-The agent presents the same small interface as a kinematic Player, but its
-position comes from the 6-DOF broom plant and FlightController. A policy supplies
-desired world velocity; `intent_for_velocity` maps that request back into stick
-inputs."""
+It looks like a kinematic Player from the outside, but its position is the
+output of the full 6-DOF plant + FlightController. The policy hands us a
+desired world velocity and intent_for_velocity turns that back into stick
+inputs the controller understands.
+"""
 
 from __future__ import annotations
 
@@ -21,11 +22,11 @@ from ..sim.sensors import SensorSuite
 
 def intent_for_velocity(state: State, v_des: np.ndarray, p: Params,
                         face_travel: bool = False) -> RiderIntent:
-    """Inverse of the intent mapper: desired WORLD velocity -> stick intent."""
+    """The intent mapper run backwards: world velocity -> stick intent."""
     yaw = m.yaw_of(state.quat)
     c, s = np.cos(yaw), np.sin(yaw)
     vx, vy, vz = v_des
-    # body-frame decomposition (mapper uses [vx;vy] = R[fwd;right], R^-1 = R)
+    # split into the body frame; the mapper uses [vx;vy]=R[fwd;right] and R^-1=R
     fwd = c * vx + s * vy
     right = s * vx - c * vy
     pitch = np.clip(fwd / p.max_speed_xy, -1.0, 1.0)
@@ -46,7 +47,7 @@ class BroomAgent:
                  state_source: str = "truth", ekf_div: int = 4, seed: int = 0):
         self.id = pid
         self.p = params or Params()
-        self.rider_ai = rider_ai             # callable(world, self) -> v_des (world)
+        self.rider_ai = rider_ai             # callable(world, self) -> desired world vel
         self.reach = reach
         self.body_radius = body_radius
         self.state_source = state_source
@@ -60,20 +61,20 @@ class BroomAgent:
         if state_source == "estimate":
             self.sensors = SensorSuite(self.p, seed=seed)
             self.est = EKF(self.p, self.dyn.state)
-            self.ekf_div = max(1, ekf_div)   # run the 15-state EKF at 400/ekf_div Hz
+            self.ekf_div = max(1, ekf_div)   # 15-state EKF runs at 400/ekf_div Hz
             self._ekf_tick = 0
             self._imu_accum: list = []
         else:
             self.sensors = self.est = None
 
     def _spawn_flying(self) -> None:
-        """Pre-spin the rotors to hover and hand control straight to the rider."""
+        """Spin the rotors up to hover and drop the rider straight into control."""
         self.dyn.fan_thrust[:] = self.p.hover_thrust / self.p.num_fans
         self.fc.commander.state = CommanderState.FLYING
         self.fc.mapper.reset(self.dyn.state)
         self.fc._was_manual = True
 
-    # Player-compatible surface.
+    # the bits that make this quack like a Player
     @property
     def pos(self) -> np.ndarray:
         return self.dyn.state.pos
@@ -89,10 +90,10 @@ class BroomAgent:
 
     def act(self, world, dt: float, vel_override: np.ndarray | None = None) -> None:
         if vel_override is not None:
-            # The referee has already folded penalties and separation into this velocity.
+            # referee already baked penalties and separation into this one
             v_des = np.asarray(vel_override, float)
         elif self.tagged_out and world.t < self._penalty_until:
-            v_des = np.array([0.0, 0.0, -0.3])   # penalised: descend at idle power
+            v_des = np.array([0.0, 0.0, -0.3])   # in the box: just sink at idle
         else:
             self.tagged_out = False
             v_des = self.rider_ai(world, self)
@@ -101,7 +102,8 @@ class BroomAgent:
         intent = intent_for_velocity(self.dyn.state, v_des, self.p)
 
         if self.state_source == "estimate":
-            # Keep gyro fresh for the rate loop; run the full EKF at the configured decimation.
+            # gyro stays fresh every tick for the rate loop; the full EKF only
+            # runs on the decimated schedule
             gyro, accel = self.sensors.imu(self.dyn.state, self.dyn.accel_world)
             self._imu_accum.append((gyro, accel))
             est = self.est.state

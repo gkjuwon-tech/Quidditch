@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Benchmark the control core: Python backend vs Rust backend.
+"""Benchmark the control core: Python backend against the Rust one.
 
-What matters for a manned flight controller is not average speed, it is
-WORST-CASE latency and jitter. At 400 Hz the inner loop has a 2500 us budget
-per tick; blow it (e.g. a GC pause) and the loop destabilizes. We measure the
-per-tick latency distribution for both backends and count deadline misses.
+For a manned flight controller the average speed is almost beside the point --
+what bites you is worst-case latency and jitter. At 400 Hz the inner loop gets
+a 2500 us budget per tick; miss it (a GC pause will do it) and the loop comes
+apart. So we measure the per-tick latency distribution for both backends and
+count the deadline misses.
 
     python tools/bench.py [n_iters]
 """
@@ -24,11 +25,11 @@ from nimbus_fc.core.params import Params  # noqa: E402
 from nimbus_fc.core.types import Setpoint, State  # noqa: E402
 
 RT_RATE_HZ = 400.0
-BUDGET_US = 1e6 / RT_RATE_HZ  # 2500 us per tick
+BUDGET_US = 1e6 / RT_RATE_HZ  # 2500 us/tick
 
 
 def _representative_state() -> State:
-    # A typical in-flight state: tilted, moving, off-target (exercises full cascade).
+    # a typical in-flight state -- tilted, moving, off target, so the whole cascade runs
     return State(
         pos=np.array([3.0, -2.0, 6.0]),
         vel=np.array([4.0, 1.0, -0.5]),
@@ -46,14 +47,14 @@ def bench(backend_name: str, n: int) -> dict:
     core = make_backend(p, backend_name)
     state, sp, dt = _representative_state(), _representative_sp(), p.dt
 
-    for _ in range(2000):              # warm up (caches, branch predictor, JIT-less)
+    for _ in range(2000):              # warm the caches and branch predictor first
         core.control(state, sp, dt)
 
     lat = np.empty(n, dtype=np.float64)
     for i in range(n):
         t0 = time.perf_counter_ns()
         core.control(state, sp, dt)
-        lat[i] = (time.perf_counter_ns() - t0) * 1e-3  # us
+        lat[i] = (time.perf_counter_ns() - t0) * 1e-3  # ns -> us
 
     misses = int(np.sum(lat > BUDGET_US))
     return {
@@ -90,7 +91,7 @@ def main(argv: list[str]) -> int:
     if len(results) == 2:
         py, ru = results
         print(f"\n  speedup (mean):   {py['mean'] / ru['mean']:6.1f}x")
-        print(f"  speedup (p99.9):  {py['p999'] / ru['p999']:6.1f}x  <- worst-case is the safety metric")
+        print(f"  speedup (p99.9):  {py['p999'] / ru['p999']:6.1f}x  <- worst case is the one that matters")
         print(f"  speedup (max):    {py['max'] / ru['max']:6.1f}x")
         print(f"  deadline misses:  python={py['deadline_misses']}  rust={ru['deadline_misses']}")
     return 0
