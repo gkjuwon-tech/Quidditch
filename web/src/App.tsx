@@ -57,7 +57,7 @@ export default function App() {
           toneMapping: THREE.ACESFilmicToneMapping,
           toneMappingExposure: 1.15,
         }}
-        camera={{ position: [-2.42, 1.45, 9.1], fov: 42, near: 0.1, far: 2000 }}
+        camera={{ position: [0, 1.6, 9.3], fov: 42, near: 0.1, far: 2000 }}
       >
         <color attach="background" args={["#21161d"]} />
         <fog attach="fog" args={[FOG_COLOR.getHex(), 110, 900]} />
